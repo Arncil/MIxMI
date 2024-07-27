@@ -1,10 +1,10 @@
 class Settings:
-    """Store all settings for mi X mi."""
-
     def __init__(self):
-        """Initalize the game's settings."""
-
-        # Screen settings
+        # Screen settings.
         self.screen_width = 600
-        self.screen_height = 900
+        self.screen_height = 800
         self.background_color = (40, 44, 52)
+
+        # Bubble settings.
+        self.bubble_speed = 10
+        self.bubble_rotation_speed = 2

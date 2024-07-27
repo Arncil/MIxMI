@@ -1,5 +1,5 @@
 # mi X mi
-*Simple bubble game project made with Python and Pygame*
+*Simple bubble game project made with Python and Pygame.*
 *Inspired by my mom's favorite game - Clusterz.*
 
 ---
