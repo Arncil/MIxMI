@@ -33,10 +33,11 @@ class Mixmi:
         self.bubbles = pygame.sprite.Group()
 
         # Create a bubble at a specific grid element
-        self._create_bubble(0)
-        self._create_bubble(20)
         self._create_bubble(37)
-        self._create_bubble(13)
+        self._create_bubble(37 * 5)
+        self._create_bubble(37 * 7)
+        self._create_bubble(37 * 10)
+
 
     def run_game(self):
         """Start the main game loop."""
@@ -71,6 +72,71 @@ class Mixmi:
 
         # Make the most recently drawn screen visible
         pygame.display.flip()
+
+    def _multiple_bubbles(self):
+        """Create bubbles around each bubble in the grid."""
+        
+        # Create bubbles around each bubble in the grid
+        for bubble in self.bubbles.sprites():
+            self._create_bubbles_around_bubble(bubble.grid_element_id)
+
+    def _create_bubbles_around_bubble(self, grid_element_id):
+        """Create bubbles around the specified bubble."""
+
+        # Check which places are occupied by bubbles
+        places_occupied = []
+        for bubble in self.bubbles.sprites():
+            places_occupied.append(bubble.grid_element_id)
+
+        # Check which places are around the bubble
+        places_around = self._get_grid_elements_around(grid_element_id)
+
+        # Remove occupied places from the list of places around
+        for place in places_occupied:
+            if place in places_around:
+                places_around.remove(place)
+
+        # Create bubbles at the places around the bubble
+        for place in places_around:
+            self._create_bubble(place)
+
+    def _get_grid_elements_around(self, el_id):
+        """Return the list of IDs around a specified grid element."""
+
+        # There are 30 rows in the grid
+        # Every frist row has 20 elements
+        # Every other row has 19 elements
+        # There are 585 elements in total
+
+        # Corners of the grid
+        if el_id == 0: return [1, 20]
+        elif el_id == 19: return [18, 38]
+        elif el_id == 566: return [546, 547, 567]
+        elif el_id == 584: return [564, 565, 583]
+
+        # Top row of the grid
+        elif el_id > 0 and el_id < 19:
+            return [el_id - 1, el_id + 1, el_id + 19, el_id + 20]
+
+        # Bottom row of the grid
+        elif el_id > 566 and el_id < 584:
+            return [el_id - 20, el_id - 19, el_id - 1, el_id + 1]
+
+        # Leftmost column of the grid
+        elif el_id > 0 and el_id % 39 == 0:
+            return [el_id - 19, el_id + 1, el_id + 20]
+        elif el_id < 566 and (el_id - 20) % 39 == 0:
+            return [el_id - 20, el_id - 19, el_id + 1, el_id + 19, el_id + 20]
+        
+        # Rightmost column of the grid
+        elif el_id > 19 and (el_id - 19) % 39 == 0:
+            return [el_id - 20, el_id - 1, el_id + 19]
+        elif el_id < 584 and (el_id - 38) % 39 == 0:
+            return [el_id - 20, el_id - 19, el_id - 1, el_id + 19, el_id + 20]
+
+        # All other elements
+        else:
+            return [el_id - 20, el_id - 19, el_id - 1, el_id + 1, el_id + 19, el_id + 20]
 
     def _create_game_grid(self):
         """Create a grid (of grid elements) for the game area."""
@@ -111,10 +177,13 @@ class Mixmi:
             # Enable the quit game option
             if event.type == pygame.QUIT:
                 sys.exit()
-            # Enable the grid visibility option (press 'g')
             elif event.type == pygame.KEYDOWN:
+                # Enable the grid visibility option (press 'g')
                 if event.key == pygame.K_g:
                     self.grid_is_visible = not self.grid_is_visible
+                # Enable the bubble creation option (press 'space')
+                if event.key == pygame.K_SPACE:
+                    self._multiple_bubbles()
 
     def _create_bubble(self, grid_element_id):
         """Create a bubble at specified position on a grid."""
@@ -128,6 +197,7 @@ class Mixmi:
         
         # Create a bubble at the specified position
         new_bubble = Bubble(self, x_pos, y_pos)
+        new_bubble.set_grid_element_id(grid_element_id)
         self.bubbles.add(new_bubble)
 
         

@@ -26,6 +26,10 @@ class Bubble(Sprite):
         self.color = self.get_random_color()
         self.set_image()
 
+        # Create placeholder for bubble's grid element ID
+        self.grid_element_id = None
+
+
     def draw_bubble(self):
         """Draw the bubble on the screen."""
         # Blit the scaled image at the position of the original Rect
@@ -65,3 +69,8 @@ class Bubble(Sprite):
         elif random_number == 5: return "cyan"
         elif random_number == 6: return "orange"
         elif random_number == 7: return "grey"
+
+    def set_grid_element_id(self, grid_element_id):
+        """Set the grid element ID of the bubble."""
+
+        self.grid_element_id = grid_element_id
