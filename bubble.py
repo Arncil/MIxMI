@@ -6,14 +6,14 @@ from settings import Settings
 class Bubble(Sprite):
     """A representation of a single bubble."""
     
-    def __init__(self, mixmi_game, x_pos=0, y_pos=0):
+    def __init__(self, mixmi_game, x_pos, y_pos):
         """Initialize the bubble and set its starting position."""
 
         # Call the parent class's __init__() method
         super().__init__()
-        # Set the screen to the screen attribute of the Mixmi class
+
+        # Get the main window and settings
         self.screen = mixmi_game.screen
-        # Set bubble settings to the settings attribute of the Mixmi class
         self.settings = mixmi_game.settings
 
         # Initialize the bubble's area
@@ -22,9 +22,8 @@ class Bubble(Sprite):
                            self.settings.bubble_radius * 2)
         self.area = pygame.Rect(self.position, self.dimensions)
 
-        # Get a random color for the bubble
+        # Colorize the bubble
         self.color = self.get_random_color()
-        # Load the image of the bubble
         self.set_image()
 
     def draw_bubble(self):
