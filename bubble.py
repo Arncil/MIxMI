@@ -1,79 +1,68 @@
 import pygame
-import math
+from random import randint
+from pygame.sprite import Sprite
+from settings import Settings
 
-class Bubble:
-    """A representation of a bubble."""
+class Bubble(Sprite):
+    """A representation of a single bubble."""
+    
+    def __init__(self, mixmi_game, x_pos=0, y_pos=0):
+        """Initialize the bubble and set its starting position."""
 
-    def __init__(self, mxm_game):
-        """Initialize the bubble and its starting position."""
-        # Reference to the game screen and settings.
-        self.screen = mxm_game.screen
-        self.settings = mxm_game.settings
+        # Call the parent class's __init__() method
+        super().__init__()
+        # Set the screen to the screen attribute of the Mixmi class
+        self.screen = mixmi_game.screen
+        # Set bubble settings to the settings attribute of the Mixmi class
+        self.settings = mixmi_game.settings
 
-        # Load the bubble image and get its rect.
-        self.original_image = pygame.image.load_extended('images/bubble_red.png')
-        self.image = self.original_image
-        self.rect = self.image.get_rect()
+        # Initialize the bubble's area
+        self.position = (x_pos, y_pos)
+        self.dimensions = (self.settings.bubble_radius * 2, 
+                           self.settings.bubble_radius * 2)
+        self.area = pygame.Rect(self.position, self.dimensions)
 
-        # Set the starting position for the bubble.
-        self.screen_rect = mxm_game.screen.get_rect()
-        self.rect.midbottom = self.screen_rect.midbottom
-
-        # Initialize the target position to the starting position.
-        self.target_x = self.rect.x
-        self.target_y = self.rect.y
-
-        # Initialize the bubble's current position.
-        self.x = float(self.rect.x)
-        self.y = float(self.rect.y)
-
-        # Initialize the rotation angle.
-        self.angle = 0
-
-    def set_target_position(self, x, y):
-        """Set the target position for the bubble."""
-        self.target_x = x
-        self.target_y = y
-
-    def rotate(self):
-        """Rotate the bubble image."""
-        # Increment the angle and keep it within 0-359 degrees.
-        self.angle = (self.angle + self.settings.bubble_rotation_speed) % 360 
-        rotated_image = pygame.transform.rotate(self.original_image, self.angle)
-        new_rect = rotated_image.get_rect(center=self.rect.center)
-        self.image = rotated_image
-        self.rect = new_rect
-
-    def update(self):
-        """Update the bubble's position."""
-        # Calculate the direction vector from the current position to the target position.
-        direction_x = self.target_x - self.x
-        direction_y = self.target_y - self.y
-        distance = math.hypot(direction_x, direction_y)  # Calculate the distance to the target.
-
-        if distance > self.settings.bubble_speed:
-            # Normalize the direction vector.
-            direction_x /= distance
-            direction_y /= distance
-
-            # Move the bubble incrementally.
-            self.x += direction_x * self.settings.bubble_speed
-            self.y += direction_y * self.settings.bubble_speed
-
-            # Update the rect position.
-            self.rect.x = int(self.x)
-            self.rect.y = int(self.y)
-
-            # Rotate the bubble.
-            self.rotate()
-
-        else:
-            # If the bubble is close enough to the target, snap to the target.
-            self.x = self.target_x
-            self.y = self.target_y
-            self.rect.x = int(self.x)
-            self.rect.y = int(self.y)
+        # Get a random color for the bubble
+        self.color = self.get_random_color()
+        # Load the image of the bubble
+        self.set_image()
 
     def draw_bubble(self):
-        """Draw the bubble at its current location."""
-        self.screen.blit(self.image, self.rect)
+        """Draw the bubble on the screen."""
+        # Blit the scaled image at the position of the original Rect
+        self.screen.blit(self.image, self.area.topleft)
+
+    def set_image(self):
+        """Set the color of the bubble."""
+        if self.color == "red":
+            self.image = pygame.image.load('images/bubble_red.png').convert_alpha()
+        elif self.color == "yellow":
+            self.image = pygame.image.load('images/bubble_yellow.png').convert_alpha()
+        elif self.color == "green":
+            self.image = pygame.image.load('images/bubble_green.png').convert_alpha()
+        elif self.color == "blue":
+            self.image = pygame.image.load('images/bubble_blue.png').convert_alpha()
+        elif self.color == "pink":
+            self.image = pygame.image.load('images/bubble_pink.png').convert_alpha()
+        elif self.color == "cyan":
+            self.image = pygame.image.load('images/bubble_cyan.png').convert_alpha()
+        elif self.color == "orange":
+            self.image = pygame.image.load('images/bubble_orange.png').convert_alpha()
+        elif self.color == "grey":
+            self.image = pygame.image.load('images/bubble_grey.png').convert_alpha()
+
+    def get_random_color(self):
+        """Return a random color for the bubbles."""
+
+        # Get a random number between 0 and the color number
+        random_number = randint(0, self.settings.color_number - 1)
+
+        # Get the color based on the random number
+        if random_number == 0: return "red"
+        elif random_number == 1: return "yellow"
+        elif random_number == 2: return "green"
+        elif random_number == 3: return "blue"
+        elif random_number == 4: return "pink"
+        elif random_number == 5: return "cyan"
+        elif random_number == 6: return "orange"
+        elif random_number == 7: return "grey"
