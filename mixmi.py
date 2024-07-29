@@ -47,17 +47,21 @@ class Mixmi:
         """Start the main game loop."""
 
         while True:
-            # Check for user input
             self._check_events()
-
-            # Update player bubble position
-            self.player_bubble.update()
-
-            # Refresh images on the screen
+            self._update_player_bubble()
             self._update_screen()
+            self.clock.tick(80)
 
-            # Set the frame rate to 60 frames per second
-            self.clock.tick(60)
+    def _update_player_bubble(self):
+        """Control the player bubble's movement."""
+
+        # Update player bubble when it is on the game area
+        if self.game_area.area.collidepoint(self.player_bubble.area.center):
+            self.player_bubble.update()
+        # Otherwise delete it and create a new one
+        else:
+            self.player_bubble.kill()
+            self.player_bubble = PlayerBubble(self)
 
     def _update_screen(self):
         """Control what the screen displays."""
@@ -93,10 +97,10 @@ class Mixmi:
             if event.type == pygame.QUIT:
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                # Enable the grid visibility option (press 'g')
+                # Enable / Disable the grid visibility option (press 'g')
                 if event.key == pygame.K_g:
                     self.grid_is_visible = not self.grid_is_visible
-                # Enable the bubble creation option (press 'space')
+                # Multiply bubbles (temporary function) (press 'space')
                 if event.key == pygame.K_SPACE:
                     self._multiple_bubbles()
                 # Enable player bubble move left (press 'left' or 'a')
@@ -119,7 +123,11 @@ class Mixmi:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 # Set bubble's target position to the mouse position (left click)
                 if event.button == 1:
-                    self.player_bubble.set_target_position(event.pos)
+                    # But only if mouse is within the game area 
+                    if self.game_area.area.collidepoint(event.pos) and (
+                        event.pos[1] < self.settings.game_height - self.settings.bubble_radius):
+                        self.player_bubble.set_target_position(event.pos)
+                        self.player_bubble.shooting = True
                 
     def _create_game_grid(self):
         """Create a grid (of grid elements) for the game area."""

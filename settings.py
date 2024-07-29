@@ -13,7 +13,7 @@ class Settings:
 
         # Bubble settings
         self.bubble_radius = self.scale_factor * 0.5 # 12.5
-        self.bubble_speed = self.scale_factor * 0.2 # 2.5
+        self.bubble_speed = self.scale_factor * 0.4 # 2.5
 
         # Game area settings
         self.game_width = self.scale_factor * 20 # 500

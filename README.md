@@ -12,7 +12,7 @@ Some basic functions have already been implemented:
 - [x] Figured out how to make bubbles stick in place.
 - [x] Enabled bubbles to multiply.
 - [x] Summoned player-controlled bubble.
-- [ ] Calculate vectors for shooting purposes.
+- [x] Calculate vectors for shooting purposes.
 - [ ] Enable bubbles to burst.
 - [ ] Introduce basic score system.
 - [ ] Develop a more advanced UI with a levels system.
