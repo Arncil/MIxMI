@@ -1,11 +1,21 @@
-# mi X mi
+# MI x MI
 *Simple bubble game project made with Python and Pygame.*
 *Inspired by my mom's favorite game - Clusterz.*
 
 ---
 
 ### Current stage of development
-Planning phase. Nothing to see here (yet), but a man with a plan.
+~~Planning phase. Nothing to see here (yet), but a man with a plan.~~
+Some basic functions have already been implemented:
+
+- [x] Created basic game display and UI elements.
+- [x] Figured out how to make bubbles stick in place.
+- [x] Enabled bubbles to multiply.
+- [x] Summoned player-controlled bubble.
+- [ ] Calculate vectors for shooting purposes.
+- [ ] Enable bubbles to burst.
+- [ ] Introduce basic score system.
+- [ ] Develop a more advanced UI with a levels system.
 
 ### Basic idea
 * In mi X mi, the main goal is to destroy all of the bubbles.

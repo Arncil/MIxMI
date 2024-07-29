@@ -46,5 +46,32 @@ class GameArea:
 
     def draw_game_area(self):
         """Draw the game_area on the screen."""
+
         draw_rounded_rect(self.screen, self.color, 
                     self.area, self.corner_radius)
+
+class LogoArea:
+    """A class to represent the logo_area of the game."""
+
+    def __init__(self, mixmi_game):
+        """Initialize the logo_area and set its starting position."""
+        
+        # Get the main window and settings
+        self.screen = mixmi_game.screen
+        self.settings = mixmi_game.settings
+
+        # Initialize the logo_area's area
+        self.position = (self.settings.logo_x_pos, 
+                         self.settings.logo_y_pos)
+        self.dimensions = (self.settings.logo_width, 
+                           self.settings.logo_height)
+        self.area = pygame.Rect(self.position, self.dimensions)
+
+        # Load the logo from images
+        self.logo = pygame.image.load('images/logo.png').convert_alpha()
+        self.logo.set_alpha(240)
+
+    def draw_logo_area(self):
+        """Draw the logo_area on the screen."""
+
+        self.screen.blit(self.logo, self.area.topleft)
