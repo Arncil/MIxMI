@@ -24,7 +24,7 @@ class Bubble(Sprite):
         self.position = (self.x_pos, self.y_pos)
         self.dimensions = (self.settings.bubble_radius * 2, 
                            self.settings.bubble_radius * 2)
-        self.area = pygame.Rect(self.position, self.dimensions)
+        self.rect = pygame.Rect(self.position, self.dimensions)
 
         # Colorize the bubble
         self.color = self.get_random_color()
@@ -36,11 +36,15 @@ class Bubble(Sprite):
     def draw_bubble(self):
         """Draw the bubble on the screen."""
         # Blit the scaled image at the position of the original Rect
-        self.screen.blit(self.image, self.area.topleft)
+        self.screen.blit(self.image, self.rect.topleft)
 
-    def set_image(self):
+    def set_image(self, specified_color=None):
         """Set the color of the bubble."""
 
+        # Set the color of the bubble if specified
+        if specified_color: self.color = specified_color
+
+        # Load the image based on the color
         if self.color == "red":
             self.image = pygame.image.load(
                 'images/bubble_red.png').convert_alpha()
@@ -116,7 +120,7 @@ class PlayerBubble(Bubble):
             """Update the player bubble's position based on movement flags."""
             
             # Update position when sliding left or right
-            if self.moving_left or self.moving_right:
+            if not self.shooting and (self.moving_left or self.moving_right):
                 self.update_position_on_sliding()
 
             # Update position when shooting
@@ -133,19 +137,19 @@ class PlayerBubble(Bubble):
         """Update the player bubble's position as it slides left or right."""
 
         # Update position as it slides left
-        if self.moving_left and self.area.left > self.settings.game_x_pos + ( 
+        if self.moving_left and self.rect.left > self.settings.game_x_pos + ( 
                                              self.settings.bubble_radius * 2):
             self.x_pos -= self.settings.bubble_speed
             self.target_x_pos -= self.settings.bubble_speed
 
         # Update position as it slides right
-        if self.moving_right and self.area.right < self.settings.game_x_pos + (
+        if self.moving_right and self.rect.right < self.settings.game_x_pos + (
                     self.settings.game_width - self.settings.bubble_radius * 2):
             self.x_pos += self.settings.bubble_speed
             self.target_x_pos += self.settings.bubble_speed
 
         # Move the bubble's area
-        self.area.x = int(self.x_pos)
+        self.rect.x = int(self.x_pos)
 
     def update_position_on_shooting(self):
         """Update the player bubble's position after player takes a shot."""
@@ -168,7 +172,7 @@ class PlayerBubble(Bubble):
         self._update_target_position_with_direction(new_direction)
 
         # Move bubble to the new position
-        self._update_area()
+        self._update_rect()
 
     def _get_direction_vector(self, starting_position, target_position):
         """Return the normalized direction vector from two positions."""
@@ -224,7 +228,7 @@ class PlayerBubble(Bubble):
         self.target_x_pos = self.x_pos + direction_vector[0] * speed
         self.target_y_pos = self.y_pos + direction_vector[1] * speed
 
-    def _update_area(self):
+    def _update_rect(self):
         """Update the player bubble's area based on its position."""
-        self.area.x = int(self.x_pos)
-        self.area.y = int(self.y_pos)
+        self.rect.x = int(self.x_pos)
+        self.rect.y = int(self.y_pos)

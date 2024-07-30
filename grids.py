@@ -25,12 +25,12 @@ class GridElement(Sprite):
         self.position = (x_pos, y_pos)
         self.dimensions = (self.settings.bubble_radius * 2,
                            self.settings.bubble_radius * 2)
-        self.area = pygame.Rect(self.position, self.dimensions)
+        self.rect = pygame.Rect(self.position, self.dimensions)
 
     def draw_grid_element(self):
         """Draw the grid element on the screen."""
 
         # Draw the grid element's outline 
-        pygame.draw.rect(self.screen, self.settings.grid_color, self.area, 1)
+        pygame.draw.rect(self.screen, self.settings.grid_color, self.rect, 1)
 
         

@@ -20,7 +20,7 @@ class Settings:
         self.game_height = self.scale_factor * 30 # 750
         self.game_x_pos = self.scale_factor * 1 # 25
         self.game_y_pos = self.scale_factor * 1 # 25
-        self.corner_radius = self.scale_factor * 1 # 25
+        self.corner_radius = self.scale_factor * 0.5 # 25
         self.game_color = (70, 70, 130)
 
         self.color_number = 7

@@ -5,15 +5,15 @@
 ---
 
 ### Current stage of development
-~~Planning phase. Nothing to see here (yet), but a man with a plan.~~
-Some basic functions have already been implemented:
+> ~~Planning phase. Nothing to see here (yet), but a man with a plan.~~
+> Some basic functions have already been implemented:
 
 - [x] Created basic game display and UI elements.
 - [x] Figured out how to make bubbles stick in place.
 - [x] Enabled bubbles to multiply.
 - [x] Summoned player-controlled bubble.
 - [x] Calculate vectors for shooting purposes.
-- [ ] Enable bubbles to burst.
+- [x] Enable bubbles to burst.
 - [ ] Introduce basic score system.
 - [ ] Develop a more advanced UI with a levels system.
 

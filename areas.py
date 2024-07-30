@@ -27,7 +27,7 @@ class GameArea:
     """A class to represent the game_area of the game."""
 
     def __init__(self, mixmi_game):
-        """Initialize the game_area and set its starting position."""
+        """Initialize the game area and set its starting position."""
         
         # Get the main window and settings
         self.screen = mixmi_game.screen
@@ -38,40 +38,40 @@ class GameArea:
                          self.settings.game_y_pos)
         self.dimensions = (self.settings.game_width, 
                            self.settings.game_height)
-        self.area = pygame.Rect(self.position, self.dimensions)
+        self.rect = pygame.Rect(self.position, self.dimensions)
 
         # Get window's parameters from settings
         self.color = self.settings.game_color
         self.corner_radius = self.settings.corner_radius
 
     def draw_game_area(self):
-        """Draw the game_area on the screen."""
+        """Draw the game area on the screen."""
 
         draw_rounded_rect(self.screen, self.color, 
-                    self.area, self.corner_radius)
+                    self.rect, self.corner_radius)
 
 class LogoArea:
-    """A class to represent the logo_area of the game."""
+    """A class to represent the logo area of the game."""
 
     def __init__(self, mixmi_game):
-        """Initialize the logo_area and set its starting position."""
+        """Initialize the logo area and set its starting position."""
         
         # Get the main window and settings
         self.screen = mixmi_game.screen
         self.settings = mixmi_game.settings
 
-        # Initialize the logo_area's area
+        # Initialize the logo area's area
         self.position = (self.settings.logo_x_pos, 
                          self.settings.logo_y_pos)
         self.dimensions = (self.settings.logo_width, 
                            self.settings.logo_height)
-        self.area = pygame.Rect(self.position, self.dimensions)
+        self.rect = pygame.Rect(self.position, self.dimensions)
 
         # Load the logo from images
         self.logo = pygame.image.load('images/logo.png').convert_alpha()
         self.logo.set_alpha(240)
 
     def draw_logo_area(self):
-        """Draw the logo_area on the screen."""
+        """Draw the logo area on the screen."""
 
-        self.screen.blit(self.logo, self.area.topleft)
+        self.screen.blit(self.logo, self.rect.topleft)
