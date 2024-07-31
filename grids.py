@@ -1,7 +1,6 @@
 import pygame
-from pygame.sprite import Sprite
 
-class GridElement(Sprite):
+class GridElement(pygame.sprite.Sprite):
     """A class to represent an element of the grid."""
 
     # Class attribute for unique grid element IDs

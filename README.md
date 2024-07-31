@@ -5,8 +5,8 @@
 ---
 
 ### Current stage of development
-> ~~Planning phase. Nothing to see here (yet), but a man with a plan.~~
-> Some basic functions have already been implemented:
+> - [x] ~~Planning phase. Nothing to see here (yet), but a man with a plan.~~
+> - [ ] Some basic functions have already been implemented:
 
 - [x] Created basic game display and UI elements.
 - [x] Figured out how to make bubbles stick in place.
@@ -18,8 +18,8 @@
 - [ ] Develop a more advanced UI with a levels system.
 
 ### Basic idea
-* In mi X mi, the main goal is to destroy all of the bubbles.
-* The player shoots a bubble from a fixed place on the screen.
+* In MI x MI, the main goal is to destroy all of the bubbles.
+* The player shoots a bubble from a fixed area of the screen.
 * Aiming and shooting are controlled via the mouse.
 * In each game, bubbles have one of a fixed number of colors.
 * A group of bubbles bursts when collided with a fired bubble of the same color.
@@ -30,4 +30,7 @@
 ### Next steps
 * Create a user-friendly UI.
 * Introduce a level system.
-* Add limited bubbles with special powers.
+* Improve graphics.
+* Add animations.
+* Make the color blind mode.
+* Introduce more advanced game mechanics.

@@ -1,8 +1,8 @@
-import sys
-import pygame
+import pygame, sys, time
 from settings import Settings
 from areas import GameArea, LogoArea
 from grids import GridElement
+from stages import Stage
 from bubbles import Bubble, PlayerBubble
 
 class Mixmi:
@@ -22,6 +22,13 @@ class Mixmi:
         pygame.display.set_caption("MI x MI")
         pygame.display.set_icon(pygame.image.load('images/bubble_icon.png'))
 
+        # Set up the cursor
+        self.cursor = pygame.image.load('images/cursor.png').convert_alpha()
+        self.cursor_surface = pygame.Surface((50, 50), pygame.SRCALPHA)
+        self.cursor_surface.blit(self.cursor, (0, 0))
+        self.cursor_data = pygame.cursors.Cursor((0, 0), self.cursor_surface)
+        pygame.mouse.set_cursor(self.cursor_data)
+
         # Create the areas of the game
         self.game_area = GameArea(self)
         self.logo_area = LogoArea(self)
@@ -36,8 +43,11 @@ class Mixmi:
 
         # Create a bubble at a specific grid element
         self._create_bubble(0)
+        self._create_bubble(1)
+        self._create_bubble(19)
+        self._create_bubble(20)
         self._create_bubble(37)
-
+        self._create_bubble(38)
 
         # Create a player bubble
         self.player_bubble = PlayerBubble(self)
@@ -46,67 +56,84 @@ class Mixmi:
         """Start the main game loop."""
 
         while True:
+            # Handle events
             self._handle_events()
+
+            # Set the background color
+            self.screen.fill(self.settings.background_color)
+
+            # Update 
             self._update_player_bubble()
-            self._update_screen()
-            self.clock.tick(80)
+            self.bubbles.update()
 
-    def _update_screen(self):
-        """Control what the screen displays."""
-        
-        # Set the background color
-        self.screen.fill(self.settings.background_color)
+            # Draw
+            self.game_area.draw_game_area()
+            self.logo_area.draw_logo_area()
+            self.bubbles.draw(self.screen)
+            self.player_bubble.draw()
+            if self.grid_is_visible:
+                for element in self.grid.sprites():
+                    element.draw_grid_element()
 
-        # Draw the areas of the game
-        self.game_area.draw_game_area()
-        self.logo_area.draw_logo_area()
+            # Make the most recently drawn screen visible
+            pygame.display.flip()   
 
-        # Draw the grid for the game area
-        if self.grid_is_visible:
-            for element in self.grid.sprites():
-                element.draw_grid_element()
-        
-        # Draw the bubbles
-        for bubble in self.bubbles.sprites():
-            bubble.draw_bubble()
-
-        # Draw the player bubble
-        self.player_bubble.draw_bubble()
-
-        # Make the most recently drawn screen visible
-        pygame.display.flip()
+            self.clock.tick(90)
 
     def _update_player_bubble(self):
-        """Control the player bubble's movement."""
-
-        # Check for collisions with other bubbles
-        if pygame.sprite.spritecollideany(self.player_bubble, self.bubbles):
-  
-            # Get the color of current player bubble
-            player_color = self.player_bubble.color
-
-            # Check for collisions player's bubble and grid elements
-            grid_element_id = self._check_collisions_player_grid()
-
-            # Create a bubble at the grid element with the same color
-            self._create_bubble(grid_element_id, player_color)
-
-            # Check if there are any bubbles to remove
-            self._burst_or_multiply(player_color, grid_element_id)
-
-            # Reset the player bubble
-            self.player_bubble.kill()
-            self.player_bubble = PlayerBubble(self)
+        """Control the player bubble's behavior."""
 
         # Update player bubble when it is in the game area
         if self.game_area.rect.collidepoint(self.player_bubble.rect.center):
             self.player_bubble.update()
+
+            # Check for collisions with other bubbles
+            if pygame.sprite.spritecollideany(self.player_bubble, self.bubbles):
     
+                # Get the color of current player's bubble
+                player_color = self.player_bubble.color
+
+                # Get the ID of the grid element nearest to the player bubble
+                grid_element_id = self._snap_bubble_to_grid()
+
+                # Create a bubble at the grid element with the same color
+                self._create_bubble(grid_element_id, player_color)
+
+                # Pause the game for a moment
+                time.sleep(0.1)
+
+                # Destroy a bubble cluster or multiply bubbles
+                self._burst_or_multiply(player_color, grid_element_id)
+
+                # Destroy bubbles that have nothing next to them
+                self._burst_unattached_bubbles()
+
+                # Reset the player bubble
+                self.player_bubble.kill()
+                self.player_bubble = PlayerBubble(self)
+
+        # Otherwise, reset the player bubble
         else:
-            # Reset the player bubble
             self.player_bubble.kill()
             self.player_bubble = PlayerBubble(self)
 
+    def _burst_unattached_bubbles(self):
+        """Remove bubbles that have nothing next to them."""
+
+        # Add to the list of suspects bubbles with more than 4 neighbors
+        suspects = []
+        for bubble in self.bubbles.sprites():
+            if len(self._get_grid_ids_around(bubble.grid_element_id)) > 4:
+                suspects.append(bubble.grid_element_id)
+
+        # Kill bubble if it has no neighbors (or walls next to them) :c
+        for bubble in self.bubbles.sprites():
+            if bubble.grid_element_id in suspects:
+                if not self._is_bubble_around_grid_element(
+                                                    bubble.grid_element_id):
+                    bubble.kill()
+                    self.bubbles.update()
+    
     def _get_connected_bubbles(self, color, first_id, connected_bubbles=None):
         """Return the set of IDs of connected bubbles of the same color."""
         
@@ -158,7 +185,19 @@ class Mixmi:
                 if bubble.grid_element_id in connected_bubbles:
                     bubble.kill()
 
-    def _check_if_grid_element_is_occupied(self, grid_element_id):
+    def _is_bubble_around_grid_element(self, grid_element_id):
+        """Return True if there is a bubble around the grid element."""
+
+        # Get the IDs of elements around the grid element
+        elements_around = self._get_grid_ids_around(grid_element_id)
+
+        # Check if there is a bubble around the grid element
+        for element in elements_around:
+            for bubble in self.bubbles.sprites():
+                if bubble.grid_element_id == element:
+                    return True
+
+    def _is_bubble_at_grid_element(self, grid_element_id):
         """Return True if the grid element is occupied by a bubble."""
 
         # Check if the grid element is occupied by a bubble
@@ -166,17 +205,61 @@ class Mixmi:
             if bubble.grid_element_id == grid_element_id:
                 return True
 
-    def _check_collisions_player_grid(self):
-        """Return the ID at nearest empty grid element."""
+    def _snap_bubble_to_grid(self):
+        """Return ID of the nearest empty grid element to the player bubble."""
 
-        # Check for collisions player's bubble and grid elements
+        # Make a list of potential nearest grid elements
+        potential_nearest = []
+
+        # Get all grid elements that collide with the player bubble
+        grid_elements = pygame.sprite.spritecollide(self.player_bubble, 
+                                                    self.grid, False)
+
+        # Check which of them are empty
+        for element in grid_elements:
+            if not self._is_bubble_at_grid_element(element.id):
+                potential_nearest.append(element.id)
+
+        if len(potential_nearest) > 1:
+            # Find the nearest grid element
+            nearest_id = self._find_nearest_grid_element(potential_nearest)
+            return nearest_id
+
+        elif len(potential_nearest) == 1:
+            return potential_nearest[0]
+
+    def _find_nearest_grid_element(self, potential_nearest):
+        """Return the ID of the nearest grid element to the player bubble."""
+
+        # Get the center of the player bubble
+        player_center = self.player_bubble.rect.center
+
+        # Find the nearest grid element
+        nearest_id = None
+        nearest_distance = float('inf')
+        for element in potential_nearest:
+            distance = self._calculate_distance_bubble_grid(
+                                     player_center, element)
+            if distance < nearest_distance:
+                nearest_id = element
+                nearest_distance = distance
+
+        return nearest_id
+
+    def _calculate_distance_bubble_grid(self, player_center, element_id):
+        """Return the distance between the player bubble and the grid element."""
+
+        # Find the center of the grid element
         for element in self.grid.sprites():
-            if self.player_bubble.rect.colliderect(element.rect):
-                # Get element's ID
-                element_id = element.id
-                # Check if the element is occupied
-                if not self._check_if_grid_element_is_occupied(element_id):
-                    return element_id
+            if element.id == element_id:
+                element_center = element.rect.center
+                break
+
+        # Calculate the distance between the player bubble and the grid element
+        distance = ((player_center[0] - element_center[0]) ** 2 + 
+                    (player_center[1] - element_center[1]) ** 2) ** 0.5
+
+        return distance
 
     def _handle_events(self):
         """Respond to keypresses and mouse events."""
@@ -190,7 +273,9 @@ class Mixmi:
             elif event.type == pygame.KEYUP:
                 self._handle_keyup_events(event)
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                self._handle_mouse_events(event)
+                self._handle_mousedown_events(event)
+            elif event.type == pygame.MOUSEBUTTONUP:
+                self._handle_mouseup_events(event)
 
     def _handle_keydown_events(self, event):
         """Respond to keypresses."""
@@ -220,16 +305,38 @@ class Mixmi:
         if event.key == pygame.K_RIGHT or event.key == pygame.K_d:
             self.player_bubble.moving_right = False
 
-    def _handle_mouse_events(self, event):
-        """Respond to mouse events."""
+    def _handle_mousedown_events(self, event):
+        """Respond to mousedown events."""
 
         # Set bubble's target position to the mouse position (left click)
         if event.button == 1:
             # But only if mouse is within the game area 
             if self.game_area.rect.collidepoint(event.pos) and event.pos[1] < (
-                self.settings.game_height - self.settings.bubble_radius):
+                self.settings.game_height - self.settings.bubble_radius) and (
+                 self.player_bubble.shooting == False):
                 self.player_bubble.set_target_position(event.pos)
                 self.player_bubble.shooting = True
+        # Move player bubble to the left (scroll up)
+        if event.button == 4:
+            self.player_bubble.moving_right = False
+            self.player_bubble.moving_left = True
+        # Move player bubble to the right (scroll down)
+        if event.button == 5:
+            self.player_bubble.moving_left = False
+            self.player_bubble.moving_right = True
+
+    def _handle_mouseup_events(self, event):
+        """Respond to mouseup events."""
+
+        # Stop moving player bubble left (scroll up release)
+        if event.button == 4:
+            self.player_bubble.moving_left = False
+            self.player_bubble.moving_right = True
+
+        # Stop moving player bubble right (scroll down release)
+        if event.button == 5:
+            self.player_bubble.moving_right = False
+            self.player_bubble.moving_left = True
 
     def _create_game_grid(self):
         """Create a grid (of grid elements) for the game area."""
@@ -282,43 +389,41 @@ class Mixmi:
         # Add the bubble to the group of bubbles
         self.bubbles.add(new_bubble)
 
-    def _get_grid_ids_around(self, el_id):
+    def _get_grid_ids_around(self, el):
         """Return the list of IDs around a specified grid element."""
 
-        # There are 30 rows in the grid
-        # Every frist row has 20 elements
-        # Every other row has 19 elements
-        # There are 585 elements in total
+        # There are 30 rows in the grid, there are 585 elements in total
+        # Every even row has 20 elements, every odd row has 19 elements
 
         # Corners of the grid
-        if el_id == 0: return [1, 20]
-        elif el_id == 19: return [18, 38]
-        elif el_id == 566: return [546, 547, 567]
-        elif el_id == 584: return [564, 565, 583]
+        if el == 0: return [1, 20]
+        elif el == 19: return [18, 38]
+        elif el == 566: return [546, 547, 567]
+        elif el == 584: return [564, 565, 583]
 
         # Top row of the grid
-        elif el_id > 0 and el_id < 19:
-            return [el_id - 1, el_id + 1, el_id + 19, el_id + 20]
+        elif el > 0 and el < 19:
+            return [el - 1, el + 1, el + 19, el + 20]
 
         # Bottom row of the grid
-        elif el_id > 566 and el_id < 584:
-            return [el_id - 20, el_id - 19, el_id - 1, el_id + 1]
+        elif el > 566 and el < 584:
+            return [el - 20, el - 19, el - 1, el + 1]
 
         # Leftmost column of the grid
-        elif el_id > 0 and el_id % 39 == 0:
-            return [el_id - 19, el_id + 1, el_id + 20]
-        elif el_id < 566 and (el_id - 20) % 39 == 0:
-            return [el_id - 20, el_id - 19, el_id + 1, el_id + 19, el_id + 20]
+        elif el > 0 and el % 39 == 0:
+            return [el - 19, el + 1, el + 20]
+        elif el < 566 and (el - 20) % 39 == 0:
+            return [el - 20, el - 19, el + 1, el + 19, el + 20]
         
         # Rightmost column of the grid
-        elif el_id > 19 and (el_id - 19) % 39 == 0:
-            return [el_id - 20, el_id - 1, el_id + 19]
-        elif el_id < 584 and (el_id - 38) % 39 == 0:
-            return [el_id - 20, el_id - 19, el_id - 1, el_id + 19, el_id + 20]
+        elif el > 19 and (el - 19) % 39 == 0:
+            return [el - 20, el - 1, el + 19]
+        elif el < 584 and (el - 38) % 39 == 0:
+            return [el - 20, el - 19, el - 1, el + 19, el + 20]
 
         # All other elements
         else:
-            return [el_id - 20, el_id - 19, el_id - 1, el_id + 1, el_id + 19, el_id + 20]
+            return [el - 20, el - 19, el - 1, el + 1, el + 19, el + 20]
 
     def _create_bubbles_around_bubble(self, grid_element_id):
         """Create bubbles around the specified bubble."""

@@ -1,9 +1,7 @@
 import pygame
-from random import randint
-from pygame.sprite import Sprite
 from settings import Settings
 
-class Bubble(Sprite):
+class Bubble(pygame.sprite.Sprite):
     """A representation of a single bubble."""
     
     def __init__(self, mixmi_game, x_pos, y_pos):
@@ -26,17 +24,23 @@ class Bubble(Sprite):
                            self.settings.bubble_radius * 2)
         self.rect = pygame.Rect(self.position, self.dimensions)
 
+        # Set the bubble's rotation
+        self.rotation = 0
+
         # Colorize the bubble
-        self.color = self.get_random_color()
+        self.color = self.settings.get_random_color()
         self.set_image()
 
         # Create placeholder for bubble's grid element ID
         self.grid_element_id = None
 
-    def draw_bubble(self):
+    def draw(self):
         """Draw the bubble on the screen."""
+
         # Blit the scaled image at the position of the original Rect
         self.screen.blit(self.image, self.rect.topleft)
+
+
 
     def set_image(self, specified_color=None):
         """Set the color of the bubble."""
@@ -72,22 +76,6 @@ class Bubble(Sprite):
         
         # Set transparency
         self.image.set_alpha(200)
-
-    def get_random_color(self):
-        """Return a random color for the bubbles."""
-
-        # Get a random number between 0 and the color number
-        random_number = randint(0, self.settings.color_number - 1)
-
-        # Get the color based on the random number
-        if random_number == 0: return "red"
-        elif random_number == 1: return "yellow"
-        elif random_number == 2: return "green"
-        elif random_number == 3: return "blue"
-        elif random_number == 4: return "pink"
-        elif random_number == 5: return "cyan"
-        elif random_number == 6: return "orange"
-        elif random_number == 7: return "grey"
 
     def set_grid_element_id(self, grid_element_id):
         """Set the grid element ID of the bubble."""
@@ -139,14 +127,14 @@ class PlayerBubble(Bubble):
         # Update position as it slides left
         if self.moving_left and self.rect.left > self.settings.game_x_pos + ( 
                                              self.settings.bubble_radius * 2):
-            self.x_pos -= self.settings.bubble_speed
-            self.target_x_pos -= self.settings.bubble_speed
+            self.x_pos -= self.settings.bubble_speed * delta_time
+            self.target_x_pos -= self.settings.bubble_speed * delta_time
 
         # Update position as it slides right
         if self.moving_right and self.rect.right < self.settings.game_x_pos + (
                     self.settings.game_width - self.settings.bubble_radius * 2):
-            self.x_pos += self.settings.bubble_speed
-            self.target_x_pos += self.settings.bubble_speed
+            self.x_pos += self.settings.bubble_speed * delta_time
+            self.target_x_pos += self.settings.bubble_speed * delta_time
 
         # Move the bubble's area
         self.rect.x = int(self.x_pos)
@@ -221,14 +209,14 @@ class PlayerBubble(Bubble):
 
         return (vector_x, vector_y)
 
-    def _update_target_position_with_direction(self, direction_vector):
+    def _update_target_position_with_direction(self, vector):
         """Update the target position to reflect the new direction."""
 
         speed = self.settings.bubble_speed
-        self.target_x_pos = self.x_pos + direction_vector[0] * speed
-        self.target_y_pos = self.y_pos + direction_vector[1] * speed
+        self.target_x_pos = self.x_pos + vector[0] * speed
+        self.target_y_pos = self.y_pos + vector[1] * speed
 
     def _update_rect(self):
         """Update the player bubble's area based on its position."""
-        self.rect.x = int(self.x_pos)
-        self.rect.y = int(self.y_pos)
+        self.rect.x = round(self.x_pos)
+        self.rect.y = round(self.y_pos)
