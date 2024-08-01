@@ -127,14 +127,14 @@ class PlayerBubble(Bubble):
         # Update position as it slides left
         if self.moving_left and self.rect.left > self.settings.game_x_pos + ( 
                                              self.settings.bubble_radius * 2):
-            self.x_pos -= self.settings.bubble_speed * delta_time
-            self.target_x_pos -= self.settings.bubble_speed * delta_time
+            self.x_pos -= self.settings.bubble_speed
+            self.target_x_pos -= self.settings.bubble_speed
 
         # Update position as it slides right
         if self.moving_right and self.rect.right < self.settings.game_x_pos + (
                     self.settings.game_width - self.settings.bubble_radius * 2):
-            self.x_pos += self.settings.bubble_speed * delta_time
-            self.target_x_pos += self.settings.bubble_speed * delta_time
+            self.x_pos += self.settings.bubble_speed
+            self.target_x_pos += self.settings.bubble_speed
 
         # Move the bubble's area
         self.rect.x = int(self.x_pos)
