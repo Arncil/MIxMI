@@ -1,5 +1,5 @@
 import pygame, platform, ctypes, math
-from random import randint
+from random import randint, shuffle
 from tkinter import Tk
 if platform.system() == 'Windows':
     from ctypes import wintypes
@@ -18,42 +18,31 @@ class Settings:
         # Bubble settings
         self.bubble_size = (36, 36)
         self.bubble_speed = 24
-        self.bubble_max_color = 8
-        self.bubble_colors = ("red", "yellow", "green", "blue",
-                              "pink", "cyan", "orange", "clear")
+        self.bubble_max_color = 3
+        self.bubble_colors = ["red", "yellow", "green", "blue",
+                              "pink", "cyan", "orange", "clear"]
+        self.bubble_original_colors = self.bubble_colors.copy()
         self.bubble_saved = self.get_random_color()
 
         # Game area settings
         self.game_area_position = (36, 108)
         self.game_area_size = None
+        self.game_area_grid_max = 0
 
         # Helpers
         self.help_resizing = True
-
-    def get_random_color(self):
-        """Return a random color for the bubbles."""
-
-        return self.bubble_colors[randint(0, self.bubble_max_color - 1)]
-
 
     def adjust_position(self, position):
         """Return the position depending on the screen size."""
 
         if self.screen_size == (432,450):
-            x = int(position[0] / 2)
-            y = int(position[1] / 2)
+            x = position[0] // 2
+            y = position[1] // 2
         else:
-            x = int(position[0] * 2)
-            y = int(position[1] * 2)
+            x = position[0] * 2
+            y = position[1] * 2
 
         return (x, y)
-
-    def get_image(self, file_name):
-        """Return the image path depending on the screen size."""
-
-        if self.screen_size == (432,450):
-            return f"../images/1x/{file_name}"
-        else: return f"../images/2x/{file_name}"
 
     def switch_screen_size(self):
         "Change current screen size to the next one from possible sizes."
@@ -66,6 +55,44 @@ class Settings:
             self.screen_size = (432, 450)
             self.bubble_size = (18, 18)
             self.bubble_speed = 12
+
+    def refresh_bubble_saved(self):
+        """Refresh the bubble saved color."""
+
+        self.bubble_saved = self.get_random_color()
+
+    def get_random_color(self):
+        """Return a random color for the bubbles."""
+
+        if self.bubble_max_color > 0:
+            return self.bubble_colors[randint(0, self.bubble_max_color - 1)]
+
+    def get_image(self, file_name):
+        """Return the image path depending on the screen size."""
+
+        if self.screen_size == (432,450):
+            return f"../images/1x/{file_name}"
+        else: return f"../images/2x/{file_name}"
+
+    def set_game_area_grid_max(self, max_number):
+        """Set the max number of bubbles in the game area."""
+
+        self.game_area_grid_max = max_number
+
+    def set_max_color(self, max_color):
+        """Set the max number of colors for the bubbles."""
+
+        self.bubble_max_color = max_color
+
+    def set_bubble_colors(self, list_of_colors):
+        """Set the bubble colors to the given list."""
+
+        self.bubble_colors = list_of_colors
+
+    def shuffle_bubble_colors(self):
+        """Randomize the order of the bubble colors."""
+    
+        shuffle(self.bubble_colors)
 
 class Cursor:
     """Class to manage the cursor."""

@@ -1,7 +1,7 @@
 import pygame, sys, time
 from settings import Settings, Cursor
 from settings import get_window_pos, set_window_pos, calculate_distance
-from areas import StartArea, BarArea, GameArea
+from areas import StartArea, BarArea, GameArea, LevelArea, ControlArea
 from bubbles import Bubble, PlayerBubble
 
 class Mixmi:
@@ -30,14 +30,20 @@ class Mixmi:
         # Set up areas
         self.start_area = StartArea(self)
         self.bar_area = BarArea(self)
+        self.control_area = ControlArea(self)
         self.game_area = GameArea(self)
+        self.level_area = LevelArea(self)
+
+        # Set up levels
+        self.level_area.level_buttons[0].unlock()
+        self.current_level = 0
 
         # Set up the bubbles
         self.player_bubble = PlayerBubble(self)
         self.bubbles = pygame.sprite.Group()
+
         # TEMPORARY: Create bubbles for testing
-        for i in range (0, 22):
-            self._create_bubble(i)
+        #self._create_bubble(5, color_id=0)
 
         # Set up variables for window dragging
         self.drag = False
@@ -65,8 +71,15 @@ class Mixmi:
             self.start_area.update()
         if self.game_area.is_active:
             self.game_area.update()
-            self.bubbles.update()
             self._update_player_bubble()
+            self.bubbles.update()
+            if self._is_grid_empty():
+                self.level_area.toggle()
+                self.game_area.toggle()
+            self.control_area.update()
+        if self.level_area.is_active:
+            self.level_area.update()
+            self.control_area.update()
 
         # Make the most recently drawn screen visible
         pygame.display.flip()
@@ -90,6 +103,8 @@ class Mixmi:
 
         self.bar_area.adjust()
         self.start_area.adjust()
+        self.control_area.adjust()
+        self.level_area.adjust()
         self.game_area.adjust()
         self.player_bubble.adjust()
         for bubble in self.bubbles:
@@ -106,25 +121,29 @@ class Mixmi:
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ BUBBLE LOGIC ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def _create_bubble(self, grid_element_id, color=None):
+    def _create_bubble(self, grid_element_id, color=None, color_id=None):
         """Create a bubble at specified position on the grid."""
 
-        # Find the grid element by its ID
-        for element in self.game_area.grid:
-            if element.id == grid_element_id:
-                position = element.position
-                break
+        # Check if grid element exceeds the maximum number of bubbles
+        if grid_element_id < self.settings.game_area_grid_max - 1:
 
-        # Create a bubble at the position
-        bubble = Bubble(self, position, grid_element_id)
+            # Find the grid element by its ID
+            for element in self.game_area.grid:
+                if element.id == grid_element_id:
+                    position = element.position
+                    break
 
-        # Set the bubble's color if specified
-        if color:
-            bubble.color = color
-            bubble.set_image(color)
+            # Create the bubble
+            if color_id is not None:
+                bubble = Bubble(self, position, grid_element_id, 
+                                self.settings.bubble_colors[color_id])
+            elif color is not None:
+                bubble = Bubble(self, position, grid_element_id, color)
+            else:
+                bubble = Bubble(self, position, grid_element_id)
 
-        # Add the bubble to the group
-        self.bubbles.add(bubble)
+            # Add the bubble to the group
+            self.bubbles.add(bubble)
 
     def _get_ids_around(self, grid_element_id):
         """Return the list of IDs around the specified grid element."""
@@ -251,13 +270,40 @@ class Mixmi:
             if self._is_bubble_lonely(bubble.grid_element_id):
                 bubble.kill()
 
+    def _get_unique_colors(self):
+        """Return a list of unique colors of bubbles on the screen."""
+
+        unique_colors = []
+        for bubble in self.bubbles.sprites():
+            if bubble.color not in unique_colors:
+                unique_colors.append(bubble.color)
+        return unique_colors
+
+    def _lower_max_color(self):
+        """Lower the maximum number of colors for the bubbles."""
+
+        unique_colors = self._get_unique_colors()
+        self.settings.set_bubble_colors(unique_colors)
+        self.settings.set_max_color(len(unique_colors))
+
+    def _is_grid_empty(self):
+        """Return True if the game area is empty."""
+
+        if len(self.bubbles.sprites()) == 0:
+            return True
+
     # ~~~~~~~~~~~~~~~~~~~~~~~ PLAYER BUBBLE LOGIC ~~~~~~~~~~~~~~~~~~~~~~~
 
     def _reset_player_bubble(self):
         """Reset the player bubble to the starting position."""
 
+        color = self.settings.bubble_saved
+        self.settings.refresh_bubble_saved()
+        if color not in self.settings.bubble_colors:
+            color = self.settings.get_random_color()
         self.player_bubble.kill()
         self.player_bubble = PlayerBubble(self)
+        self.player_bubble.set_image(color)
 
     def _switch_bubble(self):
         """Switch the player bubble to the saved one."""
@@ -266,7 +312,6 @@ class Mixmi:
         self.settings.bubble_saved = self.player_bubble.color
         self.player_bubble.color = new_color
         self.player_bubble.set_image(new_color)
-        self.game_area.is_switched = True
 
     def _find_snapping_point(self):
         """Return ID of empty grid element closest to the player bubble."""
@@ -315,12 +360,103 @@ class Mixmi:
 
         color = self.player_bubble.color
         snapping_point = self._find_snapping_point()
-        self._create_bubble(snapping_point, color)
+        self._create_bubble(snapping_point, color=color)
         time.sleep(0.08)
         self._burst_or_multiply(snapping_point)
         self._burst_lonely_bubbles()
+        self._lower_max_color()
         self._reset_player_bubble()
 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ LEVELS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    def _create_level(self, level_id):
+        """Create a level based on the specified ID."""
+
+        # Set the current level
+        self.current_level = level_id
+
+        # Clear the bubbles
+        self.bubbles.empty()
+
+        # Reset settings
+        self.settings.bubble_max_color = 8
+        self.settings.bubble_colors = self.settings.bubble_original_colors.copy()
+        
+        # Make the order of the bubble colors random
+        self.settings.shuffle_bubble_colors()
+
+        # Dynamically get the method name
+        method_name = f"_create_level_{level_id}"
+        method = getattr(self, method_name)
+
+        # Call the method if it exists
+        if method: method()
+
+    #TODO
+    def _create_level_1(self):
+        """Create the first level of the game."""
+
+        self.settings.set_max_color(3)
+
+        # Create the bubbles
+        self._create_bubble(5, color_id=0)
+        self._create_bubble(5+43, color_id=0)
+        self._create_bubble(5+43*2, color_id=0)
+        self._create_bubble(5+43*3, color_id=0)
+        self._create_bubble(5+43*4, color_id=1)
+        self._create_bubble(5+43*5, color_id=2)
+        self._create_bubble(11, color_id=0)
+        self._create_bubble(11+43, color_id=1)
+        self._create_bubble(11+43*2, color_id=2)
+        self._create_bubble(11+43*3, color_id=0)
+        self._create_bubble(11+43*4, color_id=1)
+        self._create_bubble(11+43*5, color_id=2)
+        self._create_bubble(17, color_id=0)
+        self._create_bubble(17+43, color_id=1)
+        self._create_bubble(17+43*2, color_id=2)
+        self._create_bubble(17+43*3, color_id=0)
+        self._create_bubble(17+43*4, color_id=1)
+        self._create_bubble(17+43*5, color_id=2)
+        self._create_bubble(5+21, color_id=0)
+        self._create_bubble(5+22, color_id=0)
+        self._create_bubble(5+21+43, color_id=1)
+        self._create_bubble(5+22+43, color_id=1)
+        self._create_bubble(5+21+43*2, color_id=2)
+        self._create_bubble(5+22+43*2, color_id=2)
+        self._create_bubble(5+21+43*3, color_id=0)
+        self._create_bubble(5+22+43*3, color_id=0)
+        self._create_bubble(5+21+43*4, color_id=1)
+        self._create_bubble(5+22+43*4, color_id=1)
+        self._create_bubble(11+21, color_id=0)
+        self._create_bubble(11+22, color_id=0)
+        self._create_bubble(11+21+43, color_id=1)
+        self._create_bubble(11+22+43, color_id=1)
+        self._create_bubble(11+21+43*2, color_id=2)
+        self._create_bubble(11+22+43*2, color_id=2)
+        self._create_bubble(11+21+43*3, color_id=0)
+        self._create_bubble(11+22+43*3, color_id=0)
+        self._create_bubble(11+21+43*4, color_id=1)
+        self._create_bubble(11+22+43*4, color_id=1)
+        self._create_bubble(17+21, color_id=0)
+        self._create_bubble(17+22, color_id=0)
+        self._create_bubble(17+21+43, color_id=1)
+        self._create_bubble(17+22+43, color_id=1)
+        self._create_bubble(17+21+43*2, color_id=2)
+        self._create_bubble(17+22+43*2, color_id=2)
+        self._create_bubble(17+21+43*3, color_id=0)
+        self._create_bubble(17+22+43*3, color_id=0)
+        self._create_bubble(17+21+43*4, color_id=1)
+        self._create_bubble(17+22+43*4, color_id=1)
+        self._create_bubble(6+43*2, color_id=0)
+        self._create_bubble(7+43*2, color_id=0)
+        self._create_bubble(8+43*2, color_id=2)
+        self._create_bubble(9+43*2, color_id=0)
+        self._create_bubble(10+43*2, color_id=0)
+        self._create_bubble(6+22+43*2, color_id=0)
+        self._create_bubble(7+22+43*2, color_id=2)
+        self._create_bubble(8+22+43*2, color_id=2)
+        self._create_bubble(9+22+43*2, color_id=0)
+    
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ EVENT HANDLING ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     def _handle_events(self):
@@ -391,6 +527,11 @@ class Mixmi:
             if self.bar_area.close.is_in_button_area(event.pos):
                 sys.exit()
 
+            if self.control_area.is_active:
+                # Make back button clickable
+                if self.control_area.back.is_in_button_area(event.pos):
+                    self.control_area.back.click()
+
             if self.start_area.is_active:
                 # Make play button clickable
                 if self.start_area.play.is_in_button_area(event.pos):
@@ -402,6 +543,13 @@ class Mixmi:
                 if self.start_area.options.is_in_button_area(event.pos):
                     self.start_area.options.click()
                 
+            if self.level_area.is_active:
+                # Make level buttons clickable
+                for button in self.level_area.level_buttons:
+                    if button.is_in_button_area(event.pos):
+                        if not button.is_locked:
+                            button.click()
+
             if self.game_area.is_active:
                 if not self.player_bubble.is_shooting:
                     # Enable shooting
@@ -446,8 +594,9 @@ class Mixmi:
                 # Reset play button
                 if self.start_area.play.is_clicked:
                     self.start_area.play.click()
+                    self.control_area.toggle()
                     self.start_area.toggle()
-                    self.game_area.toggle()
+                    self.level_area.toggle()
                 # Reset rules button
                 if self.start_area.rules.is_clicked:
                     self.start_area.rules.click()
@@ -455,6 +604,30 @@ class Mixmi:
                 if self.start_area.options.is_clicked:
                     self.start_area.options.click()
             
+            if self.control_area.is_active:
+                # Reset back button
+                if self.control_area.back.is_in_button_area(event.pos):
+                    self.control_area.back.click()
+                    if self.level_area.is_active:
+                        self.level_area.toggle()
+                        self.start_area.toggle()
+                        self.control_area.toggle()
+                    if self.game_area.is_active:
+                        self.game_area.toggle()
+                        self.level_area.toggle()
+
+            if self.level_area.is_active:
+                # Reset level buttons
+                for button in self.level_area.level_buttons:
+                    if not button.is_locked:
+                        if button.is_clicked:
+                            button.click()
+                            self._create_level(button.level)
+                            self.level_area.toggle()
+                            self.game_area.toggle()
+                            self.player_bubble = PlayerBubble(self)
+                            self.settings.refresh_bubble_saved()
+                        
             if self.game_area.is_active:
                 if not self.player_bubble.is_shooting:
                     # Reset left button

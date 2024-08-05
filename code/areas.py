@@ -1,6 +1,6 @@
 import pygame
 from letters import LogoLetter
-from buttons import Button
+from buttons import Button, ButtonLevel
 from grids import GridElement
 
 class Area:
@@ -73,6 +73,40 @@ class BarArea(Area):
         self.minimize.adjust()
         self.resize.adjust()
         self.close.adjust()
+
+class ControlArea(Area):
+    """A class to manage the control area of the screen."""
+
+    def __init__(self, mixmi):
+        """Initialize the control area and its attributes."""
+        
+        # Call the parent class's __init__() method
+        super().__init__(mixmi)
+
+        # Set up the basics
+        self.settings = mixmi.settings
+        self.position = (0, 36)
+
+        # Set up the buttons' positions
+        self.back_pos = (8, self.position[1] + 6)
+
+        # Set up the buttons
+        self.back = Button(mixmi, self.back_pos, 'button_back')
+
+    def adjust(self):
+        """Set the correct positions after resizing the screen."""
+        
+        # Adjust control area position
+        self.position = self.settings.adjust_position(self.position)
+
+        # Adjust buttons
+        self.back.adjust()
+
+    def update(self):
+        """Update the control area's elements."""
+        
+        # Update buttons
+        self.back.update()
 
 class StartArea(Area):
     """A class to manage the start area of the screen."""
@@ -172,9 +206,6 @@ class GameArea(Area):
         self.switch = Button(
             mixmi, self.switch_pos, self.colorize_switch_button())
 
-        # Set up helpers
-        self.is_switched = False
-
     def adjust(self):
         """Set the correct positions after resizing the screen."""
         
@@ -202,8 +233,7 @@ class GameArea(Area):
             self.grid.update()
         self.left.update()
         self.right.update()
-        if self.is_switched:
-            self.switch.load_image(self.colorize_switch_button())
+        self.switch.load_image(self.colorize_switch_button())
         self.switch.update()
 
     def colorize_switch_button(self):
@@ -262,11 +292,53 @@ class GameArea(Area):
                         self, (element * size + x + size // 2, y)))
             y += size * 5 // 6
         
+        self.settings.set_game_area_grid_max(len(grid))
+
         return grid
-                    
 
+class LevelArea(Area):
+    """A class to manage the levels area of the screen."""
 
-
-
-
+    def __init__(self, mixmi):
+        """Initialize the levels area and its attributes."""
         
+        # Call the parent class's __init__() method
+        super().__init__(mixmi)
+
+        # Set up the basics
+        self.position = (self.settings.game_area_position[0] * 2,
+                            self.settings.game_area_position[1])
+
+        # Set up the buttons
+        self.level_buttons = self.create_level_buttons(mixmi)
+
+    def update(self):
+        """Update the levels area's elements."""
+        
+        for button in self.level_buttons:
+            button.update()
+
+    def adjust(self):
+        """Set the correct positions after resizing the screen."""
+        
+        # Adjust levels area position
+        self.position = self.settings.adjust_position(self.position)
+
+        # Adjust buttons
+        for button in self.level_buttons:
+            button.adjust()
+
+    def create_level_buttons(self, mixmi):
+        """Return the list of buttons representing the levels."""
+
+        buttons = []
+        level_id = 1
+        for row in range(10):
+            for column in range(10):
+                position = (self.position[0] + column * 72,
+                            self.position[1] + row * 72)
+                buttons.append(ButtonLevel(mixmi, position,
+                         f'button_level_{level_id}', level_id))
+                level_id += 1
+        
+        return buttons

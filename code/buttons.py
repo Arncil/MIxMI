@@ -52,3 +52,32 @@ class Button:
         """Switch the button's is_clicked attribute."""
 
         self.is_clicked = not self.is_clicked
+
+class ButtonLevel(Button):
+    """A class to manage level buttons."""
+
+    def __init__(self, mixmi, position, image_name, level):
+        """Initialize the level button and its attributes."""
+
+        # Call the parent class constructor
+        super().__init__(mixmi, position, "button_level")
+
+        # Set up the basics
+        self.level = level
+        self.is_locked = True
+
+    def update(self):
+        """Update the level button's position on the screen."""
+
+        if self.is_locked:
+            self.load_image(f"button_level_{self.level}_locked")
+        else:
+            self.load_image(f"button_level_{self.level}")
+
+        self.load_image()
+        self.screen.blit(self.image, self.position)
+
+    def unlock(self):
+        """Unlock the level button."""
+
+        self.is_locked = False

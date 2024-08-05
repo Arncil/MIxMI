@@ -1,26 +1,29 @@
 # MI x MI
-> *Simple bubble game project made with Python and Pygame.*
-> *Inspired by my mom's favorite game - Clusterz.*
+*Simple bubble game project made with Python and Pygame.*
+*Inspired by my mom's favorite game - Clusterz.*
 
 ---
 
 ### Current stage of development
 > - [x] ~~Planning phase. Nothing to see here (yet), but a man with a plan.~~
 > - [x] ~~Implementing basic functions:~~
-- [x] Created basic game display and UI elements.
-- [x] Figured out how to make bubbles stick in place.
-- [x] Enabled bubbles to multiply.
-- [x] Summoned player-controlled bubble.
-- [x] Calculate vectors for shooting purposes.
-- [x] Enable bubbles to burst.
-- [x] Add basic UI elements.
+- [x] ~~Created basic game display and UI elements.~~
+- [x] ~~Figured out how to make bubbles stick in place.~~
+- [x] ~~Enabled bubbles to multiply.~~
+- [x] ~~Summoned player-controlled bubble.~~
+- [x] ~~Calculate vectors for shooting purposes.~~
+- [x] ~~Enable bubbles to burst.~~
+- [x] ~~Add basic UI elements.~~
 > - [ ] Turn it into an actual game:
 - [ ] Develop an option menu.
+- [ ] Add score system.
 - [ ] Introduce a level selection feature.
 - [ ] Add obstacles and difficulty tiers.
 - [ ] Create bonuses and special events.
 - [ ] Write the rules (tutorial) section.
 - [ ] Make first few levels.
+- [ ] Improve the animations and add some particle effects.
+- [ ] Add sounds and music.
 - [ ] Make a whole lot of levels.
 
 ### Basic idea

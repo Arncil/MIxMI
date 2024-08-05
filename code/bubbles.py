@@ -3,7 +3,7 @@ import pygame
 class Bubble(pygame.sprite.Sprite):
     """A representation of a single bubble."""
 
-    def __init__(self, mixmi, position, grid_element_id=None):
+    def __init__(self, mixmi, position, grid_element_id=None, color=None):
         """Initialize the bubble and set its starting position."""
 
         # Call the parent class's __init__() method
@@ -22,7 +22,8 @@ class Bubble(pygame.sprite.Sprite):
         self.grid_element_id = grid_element_id
 
         # Colorize the bubble
-        self.color = self.settings.get_random_color()
+        if color is not None: self.color = color
+        else: self.color = self.settings.get_random_color()
         self.set_image()
 
     def adjust(self):
@@ -126,7 +127,6 @@ class PlayerBubble(Bubble):
             self.is_moving_right = False
         elif action == "shoot":
             self.is_shooting = True
-        
 
     def _update_on_sliding(self):
         """Update the player bubble as it slides left or right."""
