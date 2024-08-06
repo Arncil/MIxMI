@@ -40,6 +40,12 @@ class Bubble(pygame.sprite.Sprite):
         # Blit image at the position of the original Rect
         self.screen.blit(self.image, self.position)
 
+    def set_color(self, color):
+        """Set the color of the bubble."""
+
+        self.color = color
+        self.set_image()
+
     def set_image(self, specified_color=None):
         """Set the image of the bubble based on its color."""
 
@@ -75,7 +81,7 @@ class Bubble(pygame.sprite.Sprite):
 class PlayerBubble(Bubble):
     """A representation of a controllable bubble."""
 
-    def __init__(self, mixmi):
+    def __init__(self, mixmi, color=None):
         """Initialize the player bubble and set its starting position."""
 
         # Define the fixed starting position
@@ -85,7 +91,7 @@ class PlayerBubble(Bubble):
             mixmi.settings.bubble_size[1]) - 4)
 
         # Call the parent class's __init__() method
-        super().__init__(mixmi, position)
+        super().__init__(mixmi, position, color=None)
         
         # Set the target position for current one before shooting
         self.target_position = self.position

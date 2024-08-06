@@ -81,3 +81,56 @@ class ButtonLevel(Button):
         """Unlock the level button."""
 
         self.is_locked = False
+
+class Label:
+    """A class to manage labels."""
+
+    def __init__(self, mixmi, position, label_type, value=1):
+        """Initialize the label and its attributes."""
+
+        self.screen = mixmi.screen
+        self.settings = mixmi.settings
+        self.position = position
+        self.label_type = label_type
+        self.value = value
+        self.image = None
+
+    def update(self):
+        """Update the label's position on the screen."""
+
+        self.load_image()
+        self.screen.blit(self.image, self.position)
+
+    def adjust(self):
+        """Set the correct position after resizing the screen."""
+
+        self.position = self.settings.adjust_position(self.position)
+
+    def load_image(self):
+        """Load the label's image."""
+
+        if self.label_type == "level":
+            self.image = pygame.image.load(self.settings.get_image(
+                f"label_level_{self.value}.png")).convert_alpha()
+        elif self.label_type == "luck_on":
+            self.image = pygame.image.load(self.settings.get_image(
+                f"label_luck.png")).convert_alpha()
+        elif self.label_type == "luck_off":
+            self.image = pygame.image.load(self.settings.get_image(
+                f"label_luck_off.png")).convert_alpha()
+        elif self.label_type == "diff_on":
+            self.image = pygame.image.load(self.settings.get_image(
+                f"label_diff.png")).convert_alpha()
+        elif self.label_type == "diff_off":
+            self.image = pygame.image.load(self.settings.get_image(
+                f"label_diff_off.png")).convert_alpha()
+
+    def set_value(self, value):
+        """Set the level of the label."""
+
+        self.value = value
+
+    def set_label_type(self, label_type):
+        """Set the type of the label."""
+
+        self.label_type = label_type

@@ -27,7 +27,11 @@ class Settings:
         # Game area settings
         self.game_area_position = (36, 108)
         self.game_area_size = None
-        self.game_area_grid_max = 0
+        self.game_area_grid_size = 0
+
+        # Level settings
+        self.level_difficulty = 1
+        self.level_luck = 5
 
         # Helpers
         self.help_resizing = True
@@ -56,7 +60,7 @@ class Settings:
             self.bubble_size = (18, 18)
             self.bubble_speed = 12
 
-    def refresh_bubble_saved(self):
+    def reroll_bubble_saved(self):
         """Refresh the bubble saved color."""
 
         self.bubble_saved = self.get_random_color()
@@ -74,10 +78,15 @@ class Settings:
             return f"../images/1x/{file_name}"
         else: return f"../images/2x/{file_name}"
 
-    def set_game_area_grid_max(self, max_number):
+    def set_game_area_grid_size(self, number_of_grid_elements):
         """Set the max number of bubbles in the game area."""
 
-        self.game_area_grid_max = max_number
+        self.game_area_grid_size = number_of_grid_elements
+
+    def set_bubble_saved(self, color):
+        """Set the bubble saved color to the given color."""
+
+        self.bubble_saved = color
 
     def set_max_color(self, max_color):
         """Set the max number of colors for the bubbles."""
@@ -93,6 +102,12 @@ class Settings:
         """Randomize the order of the bubble colors."""
     
         shuffle(self.bubble_colors)
+
+    def set_difficulty_and_luck(self, difficulty, luck):
+        """Set the difficulty and luck for the level."""
+
+        self.level_difficulty = difficulty
+        self.level_luck = luck
 
 class Cursor:
     """Class to manage the cursor."""

@@ -17,7 +17,7 @@
 > - [ ] Turn it into an actual game:
 - [ ] Develop an option menu.
 - [ ] Add score system.
-- [ ] Introduce a level selection feature.
+- [x] Introduce a level selection feature.
 - [ ] Add obstacles and difficulty tiers.
 - [ ] Create bonuses and special events.
 - [ ] Write the rules (tutorial) section.

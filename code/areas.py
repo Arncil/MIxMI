@@ -1,6 +1,6 @@
 import pygame
 from letters import LogoLetter
-from buttons import Button, ButtonLevel
+from buttons import Button, ButtonLevel, Label
 from grids import GridElement
 
 class Area:
@@ -86,12 +86,41 @@ class ControlArea(Area):
         # Set up the basics
         self.settings = mixmi.settings
         self.position = (0, 36)
+        self.current_level = 1
+        self.difficulty = 1
+        self.luck = 1
 
         # Set up the buttons' positions
         self.back_pos = (8, self.position[1] + 6)
+        self.reset_pos = (
+            self.settings.screen_size[0] - 68, self.position[1] + 6)
+        self.level_pos = (
+            self.settings.screen_size[0] // 2 - 34, self.position[1] + 2)
+        self.diff_1_pos = (100, self.position[1] + 12)
+        self.diff_2_pos = (156, self.position[1] + 12)
+        self.diff_3_pos = (212, self.position[1] + 12)
+        self.diff_4_pos = (268, self.position[1] + 12)
+        self.diff_5_pos = (324, self.position[1] + 12)
+        self.luck_1_pos = (494, self.position[1] + 12)
+        self.luck_2_pos = (550, self.position[1] + 12)
+        self.luck_3_pos = (606, self.position[1] + 12)
+        self.luck_4_pos = (662, self.position[1] + 12)
+        self.luck_5_pos = (718, self.position[1] + 12)
 
         # Set up the buttons
         self.back = Button(mixmi, self.back_pos, 'button_back')
+        self.reset = Button(mixmi, self.reset_pos, 'button_reset')
+        self.level = Label(mixmi, self.level_pos, 'level', self.current_level)
+        self.diff_1 = Label(mixmi, self.diff_1_pos, "diff_on")
+        self.diff_2 = Label(mixmi, self.diff_2_pos, "diff_on")
+        self.diff_3 = Label(mixmi, self.diff_3_pos, "diff_on")
+        self.diff_4 = Label(mixmi, self.diff_4_pos, "diff_on")
+        self.diff_5 = Label(mixmi, self.diff_5_pos, "diff_on")
+        self.luck_1 = Label(mixmi, self.luck_1_pos, "luck_on")
+        self.luck_2 = Label(mixmi, self.luck_2_pos, "luck_on")
+        self.luck_3 = Label(mixmi, self.luck_3_pos, "luck_on")
+        self.luck_4 = Label(mixmi, self.luck_4_pos, "luck_on")
+        self.luck_5 = Label(mixmi, self.luck_5_pos, "luck_on")
 
     def adjust(self):
         """Set the correct positions after resizing the screen."""
@@ -101,12 +130,113 @@ class ControlArea(Area):
 
         # Adjust buttons
         self.back.adjust()
+        self.reset.adjust()
+        self.level.adjust()
+        self.diff_1.adjust()
+        self.diff_2.adjust()
+        self.diff_3.adjust()
+        self.diff_4.adjust()
+        self.diff_5.adjust()
+        self.luck_1.adjust()
+        self.luck_2.adjust()
+        self.luck_3.adjust()
+        self.luck_4.adjust()
+        self.luck_5.adjust()
 
-    def update(self):
+    def update(self, game_area_status, level_area_status):
         """Update the control area's elements."""
         
         # Update buttons
         self.back.update()
+        if game_area_status:
+            self.reset.update()
+            self.level.update()
+            self.diff_1.update()
+            self.diff_2.update()
+            self.diff_3.update()
+            self.diff_4.update()
+            self.diff_5.update()
+            self.luck_1.update()
+            self.luck_2.update()
+            self.luck_3.update()
+            self.luck_4.update()
+            self.luck_5.update()
+
+    def set_level(self, new_level):
+        """Update the current level number."""
+
+        self.current_level = new_level
+        self.level.set_value(new_level)
+
+    def set_difficulty(self, new_difficulty):
+        """Update the current difficulty level."""
+
+        self.difficulty = new_difficulty
+        if new_difficulty == 1:
+            self.diff_1.label_type = "diff_on"
+            self.diff_2.label_type = "diff_off"
+            self.diff_3.label_type = "diff_off"
+            self.diff_4.label_type = "diff_off"
+            self.diff_5.label_type = "diff_off"
+        elif new_difficulty == 2:
+            self.diff_1.label_type = "diff_on"
+            self.diff_2.label_type = "diff_on"
+            self.diff_3.label_type = "diff_off"
+            self.diff_4.label_type = "diff_off"
+            self.diff_5.label_type = "diff_off"
+        elif new_difficulty == 3:
+            self.diff_1.label_type = "diff_on"
+            self.diff_2.label_type = "diff_on"
+            self.diff_3.label_type = "diff_on"
+            self.diff_4.label_type = "diff_off"
+            self.diff_5.label_type = "diff_off"
+        elif new_difficulty == 4:
+            self.diff_1.label_type = "diff_on"
+            self.diff_2.label_type = "diff_on"
+            self.diff_3.label_type = "diff_on"
+            self.diff_4.label_type = "diff_on"
+            self.diff_5.label_type = "diff_off"
+        elif new_difficulty == 5:
+            self.diff_1.label_type = "diff_on"
+            self.diff_2.label_type = "diff_on"
+            self.diff_3.label_type = "diff_on"
+            self.diff_4.label_type = "diff_on"
+            self.diff_5.label_type = "diff_on"
+
+    def set_luck(self, new_luck):
+        """Update the current luck level."""
+
+        self.luck = new_luck
+        if new_luck == 1:
+            self.luck_1.label_type = "luck_on"
+            self.luck_2.label_type = "luck_off"
+            self.luck_3.label_type = "luck_off"
+            self.luck_4.label_type = "luck_off"
+            self.luck_5.label_type = "luck_off"
+        elif new_luck == 2:
+            self.luck_1.label_type = "luck_on"
+            self.luck_2.label_type = "luck_on"
+            self.luck_3.label_type = "luck_off"
+            self.luck_4.label_type = "luck_off"
+            self.luck_5.label_type = "luck_off"
+        elif new_luck == 3:
+            self.luck_1.label_type = "luck_on"
+            self.luck_2.label_type = "luck_on"
+            self.luck_3.label_type = "luck_on"
+            self.luck_4.label_type = "luck_off"
+            self.luck_5.label_type = "luck_off"
+        elif new_luck == 4:
+            self.luck_1.label_type = "luck_on"
+            self.luck_2.label_type = "luck_on"
+            self.luck_3.label_type = "luck_on"
+            self.luck_4.label_type = "luck_on"
+            self.luck_5.label_type = "luck_off"
+        elif new_luck == 5:
+            self.luck_1.label_type = "luck_on"
+            self.luck_2.label_type = "luck_on"
+            self.luck_3.label_type = "luck_on"
+            self.luck_4.label_type = "luck_on"
+            self.luck_5.label_type = "luck_on"
 
 class StartArea(Area):
     """A class to manage the start area of the screen."""
@@ -121,7 +251,7 @@ class StartArea(Area):
         self.position = (0, 18)
 
         # Set up logo letters
-        self.m_0 = LogoLetter(mixmi, 0, (self.position[0] + 0,
+        self.m_0 = LogoLetter(mixmi, 0, (self.position[0] + 4,
                                          self.position[1] + 30))
         self.i_0 = LogoLetter(mixmi, 1, (self.position[0] + 114,
                                          self.position[1] + 30))
@@ -292,8 +422,7 @@ class GameArea(Area):
                         self, (element * size + x + size // 2, y)))
             y += size * 5 // 6
         
-        self.settings.set_game_area_grid_max(len(grid))
-
+        self.settings.set_game_area_grid_size(len(grid))
         return grid
 
 class LevelArea(Area):
