@@ -3,6 +3,7 @@ from random import randint
 from settings import Settings, Cursor
 from settings import get_window_pos, set_window_pos, calculate_distance
 from areas import StartArea, BarArea, GameArea, LevelArea, ControlArea
+from areas import GameOverArea
 from bubbles import Bubble, PlayerBubble
 
 class Mixmi:
@@ -34,8 +35,10 @@ class Mixmi:
         self.control_area = ControlArea(self)
         self.game_area = GameArea(self)
         self.level_area = LevelArea(self)
+        self.game_over_area = GameOverArea(self)
 
         # Set up levels
+        self.game_over_timer = True
         self.game_over = False
         self.current_level = 1
         self.level_area.level_buttons[0].unlock()
@@ -72,7 +75,7 @@ class Mixmi:
         self.bar_area.update()
         if self.start_area.is_active:
             self.start_area.update()
-            
+
         if self.game_area.is_active:
             self.control_area.update(self.game_area.is_active,
                                      self.level_area.is_active)
@@ -80,6 +83,9 @@ class Mixmi:
             self._finish_game_when_game_over()
             self._update_player_bubble()
             self.bubbles.update()
+
+        if self.game_over:
+            self.game_over_area.update()
 
         if self.level_area.is_active:
             self.control_area.update(self.game_area.is_active,
@@ -92,15 +98,17 @@ class Mixmi:
     def _update_player_bubble(self):
         """Control the player bubble behavior."""
 
-        # Update player bubble when it's in the game area
-        if self.game_area.rect.collidepoint(self.player_bubble.position):
-            self.player_bubble.update()
-            # Check for collisions with other bubbles
-            if pygame.sprite.spritecollideany(self.player_bubble, self.bubbles):
-                self._handle_collision()
-        # Otherwise, reset the player bubble
-        else:
-            self._reset_player_bubble()
+        if not self.game_over:
+            # Update player bubble when it's in the game area
+            if self.game_area.rect.collidepoint(self.player_bubble.position):
+                self.player_bubble.update()
+                # Check for collisions with other bubbles
+                if pygame.sprite.spritecollideany(self.player_bubble,
+                                                        self.bubbles):
+                    self._handle_collision()
+            # Otherwise, reset the player bubble
+            else:
+                self._reset_player_bubble()
 
     def _adjust(self):
         """Set the correct positions after resizing the screen."""
@@ -117,6 +125,10 @@ class Mixmi:
     def _switch_sizes(self):
         """Switch all elements after resizing the screen."""
 
+        if self.player_bubble.is_shooting or (
+            self.player_bubble.is_moving_left) or (
+            self.player_bubble.is_moving_right):
+            return
         self.settings.switch_screen_size()
         self.screen = pygame.display.set_mode(self.settings.screen_size,
                                                          pygame.NOFRAME)
@@ -163,9 +175,9 @@ class Mixmi:
         around it. BEWARE: This specific implementation works only if the number
         of rows is even, and grid starts with the longer row."""
 
-        # Refuse to get ids if the grid element is out of bounds
+        # Return empty list if the grid element is out of bounds
         if grid_element_id == None:
-            return
+            return []
         if grid_element_id >= self.settings.game_area_grid_size:
             return
 
@@ -300,6 +312,10 @@ class Mixmi:
         bubble_cluster.add(first_id)
         ids_around = self._get_ids_around(first_id)
 
+        # Return if there are no elements around
+        if ids_around is None:
+            return []
+
         # Add same colored bubbles to the cluster, and repeat recursively
         color = self.player_bubble.color
         for id_ in ids_around:
@@ -308,6 +324,7 @@ class Mixmi:
                     if bubble.grid_element_id == id_ and bubble.color == color:
                         self._find_bubble_cluster(id_, bubble_cluster)
 
+        
         return bubble_cluster
 
     def _burst_bubble_cluster(self, bubble_cluster):
@@ -374,6 +391,7 @@ class Mixmi:
     def _reset_player_bubble(self):
         """Reset the player bubble to the starting position."""
 
+        self.player_bubble.kill()
         self.player_bubble = PlayerBubble(self, color=self.settings.bubble_saved)
         self.settings.reroll_bubble_saved()
 
@@ -458,28 +476,29 @@ class Mixmi:
         """Handle the game over event."""
 
         if self._check_for_game_over():
+            if self.game_over_timer:
+                time.sleep(1)
+            self.game_over_timer = False
             self.game_over = True
-            #time.sleep(1)
-            #self._switch_areas(self.game_area, self.level_area)
 
     def _reset_level(self):
-        """Reset the level to the beginning."""
+        """Reset the settings and current level."""
 
+        # Reset settings
+        self.settings.bubble_max_color = 8
+        self.settings.bubble_colors = self.settings.bubble_original_colors.copy()
+
+        # Reset current level
         self._create_level(self.current_level)
 
     def _create_level(self, level_id):
         """Create a level based on the specified ID."""
 
         # Set the current level
-        self.game_over = False
         self.current_level = level_id
 
         # Clear the bubbles
         self.bubbles.empty()
-
-        # Reset settings
-        self.settings.bubble_max_color = 8
-        self.settings.bubble_colors = self.settings.bubble_original_colors.copy()
         
         # Make the order of the bubble colors random
         self.settings.shuffle_bubble_colors()
@@ -514,8 +533,8 @@ class Mixmi:
 
         # Create the bubbles
         self._create_bubble(5, color_id=0)
-        self._create_bubble(5+43, color_id=0)
-        self._create_bubble(5+43*2, color_id=0)
+        self._create_bubble(5+43, color_id=1)
+        self._create_bubble(5+43*2, color_id=2)
         self._create_bubble(5+43*3, color_id=0)
         self._create_bubble(5+43*4, color_id=1)
         self._create_bubble(5+43*5, color_id=2)
@@ -584,12 +603,6 @@ class Mixmi:
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ EVENT HANDLING ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    def _switch_areas(self, area_on, area_off):
-        """Turn on one area and turn off another."""
-
-        area_on.toggle()
-        area_off.toggle()
-
     def _handle_events(self):
         """Handle mouse and keyboard events."""
 
@@ -623,6 +636,8 @@ class Mixmi:
                 self.game_area.show_grid = not self.game_area.show_grid
             # Reset the level with 'r' key
             if event.key == pygame.K_r:
+                self.game_over = False
+                self.game_over_area.toggle(False)
                 self._reset_level()
             if not self.player_bubble.is_shooting:
                 # Move player bubble to the left (press 'left' or 'a')
@@ -688,6 +703,12 @@ class Mixmi:
                             button.click()
 
             if self.game_area.is_active:
+
+                if self.game_over:
+                    # Make try again button clickable
+                    if self.game_over_area.try_again.is_in_button_area(event.pos):
+                        self.game_over_area.try_again.click()
+                        
                 if not self.player_bubble.is_shooting:
                     # Enable shooting
                     if  self.game_area.is_in_game_area(event.pos) and (
@@ -708,7 +729,7 @@ class Mixmi:
                         self.game_area.switch.click()
                     
             # Enable dragging
-            elif self.bar_area.is_in_bar_area(event.pos):
+            if self.bar_area.is_in_bar_area(event.pos):
                 self.drag = True
                 self.drag_start = event.pos
                 self.window_start_pos = get_window_pos()
@@ -742,9 +763,12 @@ class Mixmi:
                     self.start_area.options.click()
             
             if self.control_area.is_active:
+
                 # Handle back button
                 if self.control_area.back.is_in_button_area(event.pos):
                     self.control_area.back.click()
+                    self.game_over = False
+                    self.game_over_area.toggle(False)
                     if self.level_area.is_active:
                         self.level_area.toggle()
                         self.start_area.toggle()
@@ -755,6 +779,8 @@ class Mixmi:
                 # Handle reset button
                 if self.control_area.reset.is_in_button_area(event.pos):
                     self.control_area.reset.click()
+                    self.game_over = False
+                    self.game_over_area.toggle(False)
                     self._reset_level()
 
             if self.level_area.is_active:
@@ -768,6 +794,15 @@ class Mixmi:
                             self.game_area.toggle()
 
             if self.game_area.is_active:
+
+                if self.game_over:
+                    # Handle try again button
+                    if self.game_over_area.try_again.is_in_button_area(event.pos):
+                        self.game_over_area.try_again.click()
+                        self.game_over = False
+                        self.game_over_area.toggle(False)
+                        self._create_level(self.current_level)
+                        
                 if not self.player_bubble.is_shooting:
                     # Handle left button
                     if self.game_area.left.is_clicked:

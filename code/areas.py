@@ -14,10 +14,13 @@ class Area:
         self.settings = mixmi.settings
         self.is_active = status
 
-    def toggle(self):
+    def toggle(self, choose=None):
         """Switch the active area."""
         
-        self.is_active = not self.is_active
+        if choose:
+            self.is_active = choose
+        else:
+            self.is_active = not self.is_active
 
 class BarArea(Area):
     "A class to manage the bar area of the screen."
@@ -471,3 +474,40 @@ class LevelArea(Area):
                 level_id += 1
         
         return buttons
+
+class GameOverArea(Area):
+    """A class to manage the game over area of the screen."""
+
+    def __init__(self, mixmi):
+        """Initialize the game over area and its attributes."""
+        
+        # Call the parent class's __init__() method
+        super().__init__(mixmi)
+
+        # Set up the basics
+        self.position = (52, 252)
+        self.image = pygame.image.load(
+            self.settings.get_image('game_over_area.png')).convert_alpha()
+
+        # Set up the buttons' positions
+        self.try_again_pos = (self.position[0] + 30, self.position[1] + 168)
+
+        # Set up the buttons
+        self.try_again = Button(mixmi, self.try_again_pos, 'button_try_again')
+        
+    def adjust(self):
+        """Set the correct positions after resizing the screen."""
+        
+        # Adjust game over area position
+        self.position = self.settings.adjust_position(self.position)
+
+        # Adjust buttons
+        self.try_again.adjust()
+
+    def update(self):
+        """Update the game over area's elements."""
+        
+        self.screen.blit(self.image, self.position)
+        self.try_again.update()
+
+    
