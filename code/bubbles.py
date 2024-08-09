@@ -1,177 +1,144 @@
-import pygame
+import pygame as pg
 
-class Bubble(pygame.sprite.Sprite):
-    """A representation of a single bubble."""
+class Bubble(pg.sprite.Sprite):
+    """Representation of a bubble."""
 
-    def __init__(self, mixmi, position, grid_element_id=None, color=None):
-        """Initialize the bubble and set its starting position."""
-
-        # Call the parent class's __init__() method
-        super().__init__()
-
+    def __init__(self, mixmi, pos, id_grid=None, id_color=None, name_color=None):
+        """Initialize the bubble."""
+        
         # Set up the basics
+        super().__init__()
         self.screen = mixmi.screen
-        self.settings = mixmi.settings
+        self.sett = mixmi.sett
+        self.pos = pos
+        self.rect = pg.Rect(self.pos, self.sett.bubble_size)
 
-        # Set up the rectangle
-        self.position = position
-        self.size = self.settings.bubble_size
-        self.rect = pygame.Rect(self.position, self.size)
+        # Set up optional attributes
+        if id_grid is not None: 
+            self.id_grid = id_grid
+        else: 
+            self.id_grid = None
+        if id_color is not None:
+            self.color = self.sett.colorize(id_color)
+        elif name_color is not None:
+            self.color = name_color
+        else: 
+            self.color = self.sett.colorize()
 
-        # Create placeholder for bubble's grid element ID
-        self.grid_element_id = grid_element_id
+        # Blow up the bubble
+        self.image = self._get_image()
 
-        # Colorize the bubble
-        if color is not None: self.color = color
-        else: self.color = self.settings.get_random_color()
-        self.set_image()
+    def update(self):
+        """Update the bubble."""
+        
+        self.screen.blit(self.image, self.pos)
+
+    def recolor(self, color):
+        """Recolor the bubble."""
+        
+        self.color = color
+        self.image = self._get_image()
 
     def adjust(self):
-        """Adjust the position after resizing the screen."""
-
-        self.position = self.settings.adjust_position(self.position)
-        self.size = self.settings.bubble_size
-        self.rect = pygame.Rect(self.position, self.size)
-        self.set_image()
-
-    def update(self):
-        """Update the bubble on the screen."""
-
-        # Blit image at the position of the original Rect
-        self.screen.blit(self.image, self.position)
-
-    def set_color(self, color):
-        """Set the color of the bubble."""
-
-        self.color = color
-        self.set_image()
-
-    def set_image(self, specified_color=None):
-        """Set the image of the bubble based on its color."""
-
-        # Set the color of the bubble if specified
-        if specified_color: self.color = specified_color
-
-        # Load the image based on the color
-        if self.color == "red":
-            self.image = pygame.image.load(
-                self.settings.get_image('bubble_red.png')).convert_alpha()
-        elif self.color == "yellow":
-            self.image = pygame.image.load(
-                self.settings.get_image('bubble_yellow.png')).convert_alpha()
-        elif self.color == "green":
-            self.image = pygame.image.load(
-                self.settings.get_image('bubble_green.png')).convert_alpha()
-        elif self.color == "blue":
-            self.image = pygame.image.load(
-                self.settings.get_image('bubble_blue.png')).convert_alpha()
-        elif self.color == "pink":
-            self.image = pygame.image.load(
-                self.settings.get_image('bubble_pink.png')).convert_alpha()
-        elif self.color == "cyan":
-            self.image = pygame.image.load(
-                self.settings.get_image('bubble_cyan.png')).convert_alpha()
-        elif self.color == "orange":
-            self.image = pygame.image.load(
-                self.settings.get_image('bubble_orange.png')).convert_alpha()
-        elif self.color == "clear":
-            self.image = pygame.image.load(
-                self.settings.get_image('bubble_clear.png')).convert_alpha()
-
-class PlayerBubble(Bubble):
-    """A representation of a controllable bubble."""
-
-    def __init__(self, mixmi, color=None):
-        """Initialize the player bubble and set its starting position."""
-
-        # Define the fixed starting position
-        position = (
-           (mixmi.settings.screen_size[0] - mixmi.settings.bubble_size[0]) // 2,
-            mixmi.game_area.position[1] + mixmi.game_area.image.get_height() - ( 
-            mixmi.settings.bubble_size[1]) - 4)
-
-        # Call the parent class's __init__() method
-        super().__init__(mixmi, position, color=None)
+        """Adjust the bubble's position after resizing."""
         
-        # Set the target position for current one before shooting
-        self.target_position = self.position
+        self.pos = self.sett.adjust(self.pos)
+        self.rect = pg.Rect(self.pos, self.sett.bubble_size)
+        self.image = self._get_image()
 
-        # Set movement flags
-        self.is_moving_left = False
-        self.is_moving_right = False
-        self.is_shooting = False
+    def _get_image(self):
+        """Return the bubble's image."""
+        
+        return self.sett.image(f"bubble_{self.color}")
+
+class Player(Bubble):
+    """Representation of the player's bubble."""
+    
+    def __init__(self, mixmi):
+        """Initialize the player's bubble."""
+        
+        # Define fixed starting position
+        x = (mixmi.sett.screen_size[0] - mixmi.sett.bubble_size[0]) // 2
+        y = mixmi.sett.screen_size[1] - mixmi.sett.bubble_size[1] * 3
+        super().__init__(mixmi, (x, y))
+
+        # Set the target position to the starting position before shooting
+        self.target_pos = self.pos
+
+        # Set up the movement flags
+        self.moving_left = False
+        self.moving_right = False
+        self.shooting = False
 
     def update(self):
-        """Update the player bubble position based on movement flags."""
+        """Update the player's bubble, acting on movement flags."""
 
-        # Update position when sliding left or right
-        if self.is_moving_left or self.is_moving_right:
-            self._update_on_sliding()
-        # Update position when shooting
-        elif self.is_shooting:
-            self._update_on_shooting()
+        # Update on sliding
+        if self.moving_left or self.moving_right: self._slide()
 
-        # Blit image at the position of the original Rect
-        self.screen.blit(self.image, self.position)
+        # Update on shooting
+        elif self.shooting: self._shoot()
 
-    def set_target_position(self, target_position):
-        """Set the target position for the player bubble."""
+        # Update the image
+        self.screen.blit(self.image, self.pos)
 
-        self.target_position = target_position
-
-    def handle_movement(self, action):
-        """Handle the movement of the player bubble depending on given action."""
-
+    def move(self, action):
+        """Handle the movement of the player's bubble, acting on the action."""
+            
         if action == "left":
-            self.is_moving_left = True
-            self.is_moving_right = False
+            self.moving_left = True
+            self.moving_right = False
+            self.shooting = False
         elif action == "right":
-            self.is_moving_right = True
-            self.is_moving_left = False
-        elif action == "stop":
-            self.is_moving_left = False
-            self.is_moving_right = False
+            self.moving_right = True
+            self.moving_left = False
+            self.shooting = False
         elif action == "shoot":
-            self.is_shooting = True
+            self.shooting = True
+            self.moving_left = False
+            self.moving_right = False
+        elif action == "stop":
+            self.moving_left = False
+            self.moving_right = False
+            self.shooting = False
 
-    def _update_on_sliding(self):
-        """Update the player bubble as it slides left or right."""
+    def aim(self, target_pos):
+        """Set the target position for the player's bubble."""
+        
+        self.target_pos = target_pos
+        self.shooting = True
 
-        # Move the bubble left
-        if self.is_moving_left and self.position[0] > 0 + self.size[0] * 2:
-            self.position = (self.position[0] - self.settings.bubble_speed,
-                                self.position[1])
+    def recolor(self, color):
+        """Recolor the player's bubble."""
+        
+        self.color = color
+        self.image = self._get_image()
 
-        # Move the bubble right
-        if self.is_moving_right and (
-            self.position[0] < self.settings.screen_size[0] - self.size[0] * 3):
-            self.position = (self.position[0] + self.settings.bubble_speed,
-                                self.position[1])
+    def _slide(self):
+        """Update the player's bubble as it slides left or right."""
 
-        # Update the rectangle
-        self.rect = pygame.Rect(self.position, self.size)
+        # Move left
+        if self.moving_left and self.pos[0] > self.sett.bubble_size[0] * 2:
+            self.pos = self.pos[0] - self.sett.bubble_speed, self.pos[1]
 
-    def _update_on_shooting(self):
-        """Update the player bubble's position after player takes a shot."""
+        # Move right
+        if self.moving_right and self.pos[0] < self.sett.screen_size[0] - (
+                                              self.sett.bubble_size[0] * 3):
+            self.pos = self.pos[0] + self.sett.bubble_speed, self.pos[1]
+
+        self.rect = pg.Rect(self.pos, self.sett.bubble_size)
+
+    def _shoot(self):
+        """Update the player's bubble position after player takes a shot."""
     
         """Shooting makes the bubble travel in a straight line to the target,
         and continue moving in that direction, until it hits a wall. On hitting
         a wall, the bubble will bounce off and change its direction."""
-        
-        # Get the normalized direction vector
-        direction = self._get_direction_vector(
-            self.position, self.target_position)
 
-        # Update the bubble's position based on the direction vector
+        direction = self._get_direction_vector(self.pos, self.target_pos)
         self._update_position_with_direction(direction)
-
-        # Handle wall collision and change direction accordingly
         new_direction = self._handle_wall_collision(direction)
-
-        # Update the target position based on the new direction
         self._update_target_position_with_direction(new_direction)
-
-        # Move bubble to the new position
         self._update_rect()
 
     def _get_direction_vector(self, starting_position, target_position):
@@ -191,49 +158,47 @@ class PlayerBubble(Bubble):
         return direction
 
     def _update_position_with_direction(self, direction_vector):
-        """Update the player bubble's position based on direction vector."""
+        """Update the player's bubble position based on direction vector."""
 
-        x_pos, y_pos = self.position
-        x_pos += direction_vector[0] * self.settings.bubble_speed
-        y_pos += direction_vector[1] * self.settings.bubble_speed
-        self.position = (x_pos, y_pos)
+        x_pos, y_pos = self.pos
+        x_pos += direction_vector[0] * self.sett.bubble_speed
+        y_pos += direction_vector[1] * self.sett.bubble_speed
+        self.pos = (x_pos, y_pos)
 
     def _handle_wall_collision(self, direction_vector):
         """Return the new direction of the bubble after hitting a wall."""
 
         # Get the direction vector components
-        vector_x = direction_vector[0]
-        vector_y = direction_vector[1]
+        x = direction_vector[0]
+        y = direction_vector[1]
 
         # Get game's area edges
-        left_edge = self.settings.game_area_position[0]
-        top_edge = self.settings.game_area_position[1]
-        right_edge = self.settings.game_area_position[0] + (
-            self.settings.game_area_size[0] - (self.settings.bubble_size[0]))
+        left = self.sett.game_pos[0]
+        top = self.sett.game_pos[1]
+        right = self.sett.game_pos[0] + self.sett.game_size[0] - (
+                                         self.sett.bubble_size[0])
 
         # On horizontal collision, change the x of the direction vector
-        if self.position[0] < left_edge or self.position[0] > right_edge:
-            vector_x = -vector_x
-            self.position = (
-                self.position[0] + vector_x * self.settings.bubble_speed,
-                self.position[1])
+        if self.pos[0] < left or self.pos[0] > right:
+            x = -x
+            self.pos = (self.pos[0] + x * self.sett.bubble_speed, self.pos[1])
 
         # On vertical collision, change the y of the direction vector
-        if self.position[1] < top_edge:
-            vector_y = -vector_y
-            self.position = (self.position[0],
-                self.position[1] + vector_y * self.settings.bubble_speed)
+        if self.pos[1] < top:
+            y = -y
+            self.pos = (self.pos[0], self.pos[1] + y * self.sett.bubble_speed)
 
-        return (vector_x, vector_y)
+        return (x, y)
 
     def _update_target_position_with_direction(self, vector):
         """Update the target position to reflect the new direction."""
 
-        target_x_pos = self.position[0] + vector[0] * self.settings.bubble_speed
-        target_y_pos = self.position[1] + vector[1] * self.settings.bubble_speed
-        self.target_position = (target_x_pos, target_y_pos)
+        target_x_pos = self.pos[0] + vector[0] * self.sett.bubble_speed
+        target_y_pos = self.pos[1] + vector[1] * self.sett.bubble_speed
+        self.target_pos = (target_x_pos, target_y_pos)
 
     def _update_rect(self):
         """Update the player bubble's area based on its position."""
-        self.rect.x = round(self.position[0])
-        self.rect.y = round(self.position[1])
+
+        self.rect.x = round(self.pos[0])
+        self.rect.y = round(self.pos[1])

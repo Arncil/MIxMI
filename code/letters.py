@@ -1,26 +1,27 @@
-import pygame
-
 class LogoLetter:
-    """A class to manage the logo letters."""
+    """Representation of a logo letter."""
 
-    def __init__(self, mixmi, letter_id, position):
-        """Initialize the letter and its attributes."""
-        
+    def __init__(self, mixmi, id_, position):
+        """Initialize the game's logo letters."""
+
         self.screen = mixmi.screen
-        self.settings = mixmi.settings
-        self.letter_id = letter_id
-        self.position = self.settings.adjust_position(position)
-        self.image = pygame.image.load(self.settings.get_image(
-                                f'logo_{self.letter_id}.png')).convert_alpha()
-
-    def adjust(self):
-        """Set the correct position after resizing the screen."""
-        
-        self.position = self.settings.adjust_position(self.position)
+        self.sett = mixmi.sett
+        self.pos = position
+        self.id_ = id_
+        self.image = self._load_image()
 
     def update(self):
-        """Update the letter's position on the screen."""
+        """Update the logo letter on the screen."""
 
-        self.image = pygame.image.load(self.settings.get_image(
-                                f'logo_{self.letter_id}.png')).convert_alpha()
-        self.screen.blit(self.image, self.position)
+        self.screen.blit(self.image, self.pos)
+
+    def adjust(self):
+        """Adjust the logo letter's position after resizing."""
+
+        self.pos = self.sett.adjust(self.pos)
+        self.image = self._load_image()
+
+    def _load_image(self):
+        """Load an image, acting on current click status."""
+
+        return self.sett.image(f"logo_{self.id_}")

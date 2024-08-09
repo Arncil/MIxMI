@@ -1,37 +1,35 @@
-import pygame
+import pygame as pg
 
-class GridElement(pygame.sprite.Sprite):
-    """A class to represent an element of the grid."""
+class GridPart(pg.sprite.Sprite):
+    """Representation of a part of a grid."""
 
-    # Class attribute for unique grid element IDs
+    # Class attribute for unique gird part IDs
     _id_counter = 0
 
-    def __init__(self, mixmi_game, position):
-        """Initialize the grid element and set its starting position."""
-
-        # Call the parent class's __init__() method
-        super().__init__()
-
-        # Assign a unique ID and increment the counter
-        self.id = GridElement._id_counter
-        GridElement._id_counter += 1
-
+    def __init__(self, mixmi, pos):
+        """Initialize the game's grid parts."""
+        
         # Set up the basics
-        self.screen = mixmi_game.screen
-        self.settings = mixmi_game.settings
-
-        # Set up the rectangle
-        self.position = position
-        self.rect = pygame.Rect(self.position, self.settings.bubble_size)
+        super().__init__()
+        self.screen = mixmi.screen
+        self.sett = mixmi.sett
+        self.id = GridPart._id_counter
+        GridPart._id_counter += 1
+        self.pos = pos
+        self.rect = pg.Rect(self.pos, self.sett.bubble_size)
 
     def update(self):
-        """Draw the grid element on the screen."""
+        """Update the grid part on the screen."""
 
-        # Draw the grid element's outline 
-        pygame.draw.rect(self.screen, (237, 60, 200), self.rect, 1)
+        pg.draw.rect(self.screen, (237, 60, 200), self.rect, 1)
 
     def adjust(self):
-        """Adjust the position after resizing the screen."""
+        """Redraw the grid part after resizing the screen."""
 
-        self.position = self.settings.adjust_position(self.position)
-        self.rect = pygame.Rect(self.position, self.settings.bubble_size)
+        self.pos = self.sett.adjust(self.pos)
+        self.rect = pg.Rect(self.pos, self.sett.bubble_size)
+
+    def get_pos_by_id(self, id):
+        """Return the position of a grid part by its ID."""
+        
+        return self.pos

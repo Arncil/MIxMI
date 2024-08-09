@@ -5,134 +5,106 @@ if platform.system() == 'Windows':
     from ctypes import wintypes
 
 class Settings:
-    """A class to store all settings for MI x MI."""
+    "Representation of the settings of the game."
 
     def __init__(self):
-        """Initialize the game's default settings."""
-
-        # Screen settings
-        self.screen_size = (864,900)
-        self.screen_title = "MI x MI"
+        """Initialize the game's settings."""
+        
+        # Screen setttings
+        self.screen_size = (864, 900)
         self.screen_fps = 90
 
         # Bubble settings
         self.bubble_size = (36, 36)
         self.bubble_speed = 24
-        self.bubble_max_color = 3
-        self.bubble_colors = ["red", "yellow", "green", "blue",
-                              "pink", "cyan", "orange", "clear"]
-        self.bubble_original_colors = self.bubble_colors.copy()
-        self.bubble_saved = self.get_random_color()
+        self.saved_color = "red"
 
         # Game area settings
-        self.game_area_position = (36, 108)
-        self.game_area_size = None
-        self.game_area_grid_size = 0
+        self.game_pos = (36, 108)
+        self.game_size = None
 
         # Level settings
-        self.level_difficulty = 1
+        self.level_colors = [
+            "red", "yellow", "green", "blue", "pink", "cyan", "orange", "clear"]
+        self.level_original_colors = self.level_colors.copy()
+        self.level_max_colors = 3
+        self.level_current = 1
+        self.level_diff = 1
         self.level_luck = 5
 
-        # Helpers
-        self.help_resizing = True
+    def setter(self, attribute, value):
+        """Set the value of an attribute."""
+        
+        setattr(self, attribute, value)
 
-    def adjust_position(self, position):
-        """Return the position depending on the screen size."""
+    def image(self, file_name):
+        """Load an image, acting on current screen size."""
 
-        if self.screen_size == (432,450):
-            x = position[0] // 2
-            y = position[1] // 2
+        if self.screen_size == (864, 900):
+            return pygame.image.load(
+                f"../images/2x/{file_name}.png").convert_alpha()
         else:
-            x = position[0] * 2
-            y = position[1] * 2
+            return pygame.image.load(
+                f"../images/1x/{file_name}.png").convert_alpha()
 
-        return (x, y)
+    def adjust(self, pos):
+        """Adjust the position after resizing the screen."""
 
-    def switch_screen_size(self):
-        "Change current screen size to the next one from possible sizes."
-
-        if self.screen_size == (432, 450):
-            self.screen_size = (864, 900)
-            self.bubble_size = (36, 36)
-            self.bubble_speed = 24
+        if self.screen_size == (864, 900):
+            return pos[0] * 2, pos[1] * 2
         else:
-            self.screen_size = (432, 450)
-            self.bubble_size = (18, 18)
-            self.bubble_speed = 12
-
-    def reroll_bubble_saved(self):
-        """Refresh the bubble saved color."""
-
-        self.bubble_saved = self.get_random_color()
-
-    def get_random_color(self):
-        """Return a random color for the bubbles."""
-
-        if self.bubble_max_color > 0:
-            return self.bubble_colors[randint(0, self.bubble_max_color - 1)]
-
-    def get_image(self, file_name):
-        """Return the image path depending on the screen size."""
-
-        if self.screen_size == (432,450):
-            return f"../images/1x/{file_name}"
-        else: return f"../images/2x/{file_name}"
-
-    def set_game_area_grid_size(self, number_of_grid_elements):
-        """Set the max number of bubbles in the game area."""
-
-        self.game_area_grid_size = number_of_grid_elements
-
-    def set_bubble_saved(self, color):
-        """Set the bubble saved color to the given color."""
-
-        self.bubble_saved = color
-
-    def set_max_color(self, max_color):
-        """Set the max number of colors for the bubbles."""
-
-        self.bubble_max_color = max_color
-
-    def set_bubble_colors(self, list_of_colors):
-        """Set the bubble colors to the given list."""
-
-        self.bubble_colors = list_of_colors
-
-    def shuffle_bubble_colors(self):
-        """Randomize the order of the bubble colors."""
-    
-        shuffle(self.bubble_colors)
-
-    def set_difficulty_and_luck(self, difficulty, luck):
-        """Set the difficulty and luck for the level."""
-
-        self.level_difficulty = difficulty
-        self.level_luck = luck
-
-class Cursor:
-    """Class to manage the cursor."""
-
-    def __init__(self, mixmi):
-        """Initialize the cursor and its attributes."""
-
-        self.settings = mixmi.settings
-        self.image = pygame.image.load(
-            self.settings.get_image('cursor.png')).convert_alpha()
-        self.size = (48,48)
-        self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
-        self.surface.blit(self.image, (0,0))
-        self.cursor = pygame.cursors.Cursor((0,0), self.surface)
-        pygame.mouse.set_cursor(self.cursor)
+            return pos[0] // 2, pos[1] // 2
 
     def resize(self):
-        """Set the correct position after resizing the screen."""
+        """Resize the screen."""
 
-        self.size = self.settings.adjust_position(self.size)
-        self.image = pygame.image.load(
-            self.settings.get_image('cursor.png')).convert_alpha()
+        if self.screen_size == (864, 900):
+            self.screen_size = self.screen_size[0]//2, self.screen_size[1]//2
+            self.bubble_size = self.bubble_size[0]//2, self.bubble_size[1]//2
+            self.bubble_speed = self.bubble_speed//2
+        else:
+            self.screen_size = self.screen_size[0]*2, self.screen_size[1]*2
+            self.bubble_size = self.bubble_size[0]*2, self.bubble_size[1]*2
+            self.bubble_speed = self.bubble_speed*2
+
+    def colorize(self, id_color=None):
+        """Return a color from the list of level colors."""
+
+        if len(self.level_colors) > 0:
+            if id_color is not None:
+                return self.level_colors[id_color]
+            else:
+                return self.level_colors[randint(0, len(self.level_colors) - 1)]
+
+    def prepare_level(self):
+        """Prepare the level for the next game."""
+
+        self.level_colors = self.level_original_colors.copy()
+        shuffle(self.level_colors)
+        self.level_colors = self.level_colors[:self.level_max_colors]
+
+class Cursor:
+    """Representation of the cursor."""
+
+    def __init__(self, mixmi):
+        """Initialize the game's cursor."""
+
+        self.sett = mixmi.sett
+        self.image = self.sett.image("cursor")
+        self.size = self.image.get_size()
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
-        self.surface.blit(self.image, (0,0))
-        self.cursor = pygame.cursors.Cursor((0,0), self.surface)
+        self.surface.blit(self.image, (0, 0))
+        self.cursor = pygame.cursors.Cursor((0, 0), self.surface)
+        pygame.mouse.set_cursor(self.cursor)
+
+    def adjust(self):
+        """Adjust the cursor's position after resizing."""
+
+        self.size = self.sett.adjust(self.size)
+        self.image = self.sett.image("cursor")
+        self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
+        self.surface.blit(self.image, (0, 0))
+        self.cursor = pygame.cursors.Cursor((0, 0), self.surface)
         pygame.mouse.set_cursor(self.cursor)
 
 def get_window_pos():
@@ -168,4 +140,3 @@ def calculate_distance(pos1, pos2):
     """Return the distance between two points."""
 
     return math.sqrt((pos2[0] - pos1[0]) ** 2 + (pos2[1] - pos1[1]) ** 2)
-

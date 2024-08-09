@@ -1,513 +1,394 @@
-import pygame
+import pygame as pg
+from buttons import Button, LevelButton, Label
 from letters import LogoLetter
-from buttons import Button, ButtonLevel, Label
-from grids import GridElement
+from grids import GridPart
 
 class Area:
-    """A class to manage the screen areas."""
+    """Representation of an area of the screen."""
 
-    def __init__(self, mixmi, status=False):
-        """Initialize the areas and their attributes."""
-        
+    def __init__(self, mixmi, visible=False):
+        """Initialize the game's areas."""
+
         # Set up the basics
         self.screen = mixmi.screen
-        self.settings = mixmi.settings
-        self.is_active = status
+        self.sett = mixmi.sett
+        self.visible = visible
 
-    def toggle(self, choose=None):
-        """Switch the active area."""
+    def setter(self, attribute, value):
+        """Set the value of an attribute."""
         
-        if choose:
-            self.is_active = choose
-        else:
-            self.is_active = not self.is_active
+        setattr(self, attribute, value)
 
-class BarArea(Area):
-    "A class to manage the bar area of the screen."
+class Bar(Area):
+    """Representation of a title bar."""
 
     def __init__(self, mixmi):
-        "Initialize the bar area and its attributes."
+        """Initialize the game's title bar."""
 
-        # Call the parent class's __init__() method
+        # Set up the basics
         super().__init__(mixmi, True)
+        self.image = self.sett.image("bar")
 
-        # Set up the bar
-        self.position = (0, 0)
-        self.image = pygame.image.load(
-            self.settings.get_image('bar.png')).convert_alpha()
-        self.screen.blit(self.image, self.position)
-
-        # Set up buttons' positions
-        self.minimize_pos = (self.position[0] + 768, self.position[1] + 6)
-        self.resize_pos = (self.position[0] + 800, self.position[1] + 6)
-        self.close_pos = (self.position[0] + 832, self.position[1] + 6)
+        # Set up the positions
+        self.pos = (0, 0)
+        self.minimize_pos = (self.pos[0] + 768, self.pos[1] + 6)
+        self.resize_pos = (self.pos[0] + 800, self.pos[1] + 6)
+        self.close_pos = (self.pos[0] + 832, self.pos[1] + 6)
 
         # Set up the buttons
-        self.minimize = Button(mixmi, self.minimize_pos, 'button_minimize')
-        self.resize = Button(mixmi, self.resize_pos, 'button_resize')
-        self.close = Button(mixmi, self.close_pos, 'button_close')
-
-    def is_in_bar_area(self, event_pos):
-        "Return True if the event is in the bar area."
-
-        start = self.position
-        end = (self.position[0] + self.image.get_width(),
-               self.position[1] + self.image.get_height())
-
-        if start[0] <= event_pos[0] <= end[0] and (
-            start[1] <= event_pos[1] <= end[1]):
-            return True
+        self.minimize = Button(mixmi, self.minimize_pos, "minimize")
+        self.resize = Button(mixmi, self.resize_pos, "resize")
+        self.close = Button(mixmi, self.close_pos, "close")
 
     def update(self):
-        "Update the bar area's elements."
+        """Update the title bar on the screen."""
 
-        # Update bar
-        self.image = pygame.image.load(self.settings.get_image('bar.png'))
-        self.screen.blit(self.image, self.position)
-        # Update bur's elements
+        self.screen.blit(self.image, self.pos)
         self.minimize.update()
         self.resize.update()
         self.close.update()
 
     def adjust(self):
-        "Set the correct positions after resizing the screen."
+        """Adjust the title bar's position after resizing."""
 
-        self.position = self.settings.adjust_position(self.position)
+        self.pos = self.sett.adjust(self.pos)
+        self.image = self.sett.image("bar")
         self.minimize.adjust()
         self.resize.adjust()
         self.close.adjust()
 
-class ControlArea(Area):
-    """A class to manage the control area of the screen."""
+    def active(self, pos):
+        """Return True if the mouse is on the title bar."""
+    
+        x_0, y_0 = self.pos
+        x_1, y_1 = self.image.get_size()
+
+        return x_0 <= pos[0] <= x_0 + x_1 and y_0 <= pos[1] <= y_0 + y_1
+
+class Start(Area):
+    """Representation of the start screen area."""
 
     def __init__(self, mixmi):
-        """Initialize the control area and its attributes."""
-        
-        # Call the parent class's __init__() method
-        super().__init__(mixmi)
+        """Initialize the game's start screen area."""
 
         # Set up the basics
-        self.settings = mixmi.settings
-        self.position = (0, 36)
-        self.current_level = 1
-        self.difficulty = 1
-        self.luck = 1
+        super().__init__(mixmi, True)
+        
+        # Set up the positions
+        self.pos = (0, 18)
+        self.m_0_pos = (self.pos[0] + 8, self.pos[1] + 60)
+        self.i_0_pos = (self.pos[0] + 228, self.pos[1] + 60)
+        self.x_0_pos = (self.pos[0] + 372, self.pos[1] + 120)
+        self.m_1_pos = (self.pos[0] + 490, self.pos[1] + 60)
+        self.i_1_pos = (self.pos[0] + 704, self.pos[1] + 60)
+        self.play_pos = (self.pos[0] + 252, self.pos[1] + 360)
+        self.rules_pos = (self.pos[0] + 252, self.pos[1] + 528)
+        self.options_pos = (self.pos[0] + 252, self.pos[1] + 696)
 
-        # Set up the buttons' positions
-        self.back_pos = (8, self.position[1] + 6)
-        self.reset_pos = (
-            self.settings.screen_size[0] - 68, self.position[1] + 6)
-        self.level_pos = (
-            self.settings.screen_size[0] // 2 - 34, self.position[1] + 2)
-        self.diff_1_pos = (100, self.position[1] + 12)
-        self.diff_2_pos = (156, self.position[1] + 12)
-        self.diff_3_pos = (212, self.position[1] + 12)
-        self.diff_4_pos = (268, self.position[1] + 12)
-        self.diff_5_pos = (324, self.position[1] + 12)
-        self.luck_1_pos = (494, self.position[1] + 12)
-        self.luck_2_pos = (550, self.position[1] + 12)
-        self.luck_3_pos = (606, self.position[1] + 12)
-        self.luck_4_pos = (662, self.position[1] + 12)
-        self.luck_5_pos = (718, self.position[1] + 12)
+        # Set up the logo letters
+        self.m_0 = LogoLetter(mixmi, 0, self.m_0_pos)
+        self.i_0 = LogoLetter(mixmi, 1, self.i_0_pos)
+        self.x_0 = LogoLetter(mixmi, 2, self.x_0_pos)
+        self.m_1 = LogoLetter(mixmi, 0, self.m_1_pos)
+        self.i_1 = LogoLetter(mixmi, 1, self.i_1_pos)
 
         # Set up the buttons
-        self.back = Button(mixmi, self.back_pos, 'button_back')
-        self.reset = Button(mixmi, self.reset_pos, 'button_reset')
-        self.level = Label(mixmi, self.level_pos, 'level', self.current_level)
-        self.diff_1 = Label(mixmi, self.diff_1_pos, "diff_on")
-        self.diff_2 = Label(mixmi, self.diff_2_pos, "diff_on")
-        self.diff_3 = Label(mixmi, self.diff_3_pos, "diff_on")
-        self.diff_4 = Label(mixmi, self.diff_4_pos, "diff_on")
-        self.diff_5 = Label(mixmi, self.diff_5_pos, "diff_on")
-        self.luck_1 = Label(mixmi, self.luck_1_pos, "luck_on")
-        self.luck_2 = Label(mixmi, self.luck_2_pos, "luck_on")
-        self.luck_3 = Label(mixmi, self.luck_3_pos, "luck_on")
-        self.luck_4 = Label(mixmi, self.luck_4_pos, "luck_on")
-        self.luck_5 = Label(mixmi, self.luck_5_pos, "luck_on")
-
-    def adjust(self):
-        """Set the correct positions after resizing the screen."""
-        
-        # Adjust control area position
-        self.position = self.settings.adjust_position(self.position)
-
-        # Adjust buttons
-        self.back.adjust()
-        self.reset.adjust()
-        self.level.adjust()
-        self.diff_1.adjust()
-        self.diff_2.adjust()
-        self.diff_3.adjust()
-        self.diff_4.adjust()
-        self.diff_5.adjust()
-        self.luck_1.adjust()
-        self.luck_2.adjust()
-        self.luck_3.adjust()
-        self.luck_4.adjust()
-        self.luck_5.adjust()
-
-    def update(self, game_area_status, level_area_status):
-        """Update the control area's elements."""
-        
-        # Update buttons
-        self.back.update()
-        if game_area_status:
-            self.reset.update()
-            self.level.update()
-            self.diff_1.update()
-            self.diff_2.update()
-            self.diff_3.update()
-            self.diff_4.update()
-            self.diff_5.update()
-            self.luck_1.update()
-            self.luck_2.update()
-            self.luck_3.update()
-            self.luck_4.update()
-            self.luck_5.update()
-
-    def set_level(self, new_level):
-        """Update the current level number."""
-
-        self.current_level = new_level
-        self.level.set_value(new_level)
-
-    def set_difficulty(self, new_difficulty):
-        """Update the current difficulty level."""
-
-        self.difficulty = new_difficulty
-        if new_difficulty == 1:
-            self.diff_1.label_type = "diff_on"
-            self.diff_2.label_type = "diff_off"
-            self.diff_3.label_type = "diff_off"
-            self.diff_4.label_type = "diff_off"
-            self.diff_5.label_type = "diff_off"
-        elif new_difficulty == 2:
-            self.diff_1.label_type = "diff_on"
-            self.diff_2.label_type = "diff_on"
-            self.diff_3.label_type = "diff_off"
-            self.diff_4.label_type = "diff_off"
-            self.diff_5.label_type = "diff_off"
-        elif new_difficulty == 3:
-            self.diff_1.label_type = "diff_on"
-            self.diff_2.label_type = "diff_on"
-            self.diff_3.label_type = "diff_on"
-            self.diff_4.label_type = "diff_off"
-            self.diff_5.label_type = "diff_off"
-        elif new_difficulty == 4:
-            self.diff_1.label_type = "diff_on"
-            self.diff_2.label_type = "diff_on"
-            self.diff_3.label_type = "diff_on"
-            self.diff_4.label_type = "diff_on"
-            self.diff_5.label_type = "diff_off"
-        elif new_difficulty == 5:
-            self.diff_1.label_type = "diff_on"
-            self.diff_2.label_type = "diff_on"
-            self.diff_3.label_type = "diff_on"
-            self.diff_4.label_type = "diff_on"
-            self.diff_5.label_type = "diff_on"
-
-    def set_luck(self, new_luck):
-        """Update the current luck level."""
-
-        self.luck = new_luck
-        if new_luck == 1:
-            self.luck_1.label_type = "luck_on"
-            self.luck_2.label_type = "luck_off"
-            self.luck_3.label_type = "luck_off"
-            self.luck_4.label_type = "luck_off"
-            self.luck_5.label_type = "luck_off"
-        elif new_luck == 2:
-            self.luck_1.label_type = "luck_on"
-            self.luck_2.label_type = "luck_on"
-            self.luck_3.label_type = "luck_off"
-            self.luck_4.label_type = "luck_off"
-            self.luck_5.label_type = "luck_off"
-        elif new_luck == 3:
-            self.luck_1.label_type = "luck_on"
-            self.luck_2.label_type = "luck_on"
-            self.luck_3.label_type = "luck_on"
-            self.luck_4.label_type = "luck_off"
-            self.luck_5.label_type = "luck_off"
-        elif new_luck == 4:
-            self.luck_1.label_type = "luck_on"
-            self.luck_2.label_type = "luck_on"
-            self.luck_3.label_type = "luck_on"
-            self.luck_4.label_type = "luck_on"
-            self.luck_5.label_type = "luck_off"
-        elif new_luck == 5:
-            self.luck_1.label_type = "luck_on"
-            self.luck_2.label_type = "luck_on"
-            self.luck_3.label_type = "luck_on"
-            self.luck_4.label_type = "luck_on"
-            self.luck_5.label_type = "luck_on"
-
-class StartArea(Area):
-    """A class to manage the start area of the screen."""
-
-    def __init__(self, mixmi):
-        """Initialize the start area and its attributes."""
-        
-        # Call the parent class's __init__() method
-        super().__init__(mixmi, True)
-
-        # Set up the basics
-        self.position = (0, 18)
-
-        # Set up logo letters
-        self.m_0 = LogoLetter(mixmi, 0, (self.position[0] + 4,
-                                         self.position[1] + 30))
-        self.i_0 = LogoLetter(mixmi, 1, (self.position[0] + 114,
-                                         self.position[1] + 30))
-        self.x_0 = LogoLetter(mixmi, 2, (self.position[0] + 186,
-                                         self.position[1] + 60))
-        self.m_1 = LogoLetter(mixmi, 3, (self.position[0] + 249,
-                                         self.position[1] + 30))
-        self.i_1 = LogoLetter(mixmi, 4, (self.position[0] + 352,
-                                         self.position[1] + 30))
-
-        # Set up buttons' positions
-        self.play_pos = (self.position[0] + 252, self.position[1] + 360)
-        self.rules_pos = (self.position[0] + 252, self.position[1] + 528)
-        self.options_pos = (self.position[0] + 252, self.position[1] + 696)
-
-        # Set up menu buttons
-        self.play = Button(mixmi, self.play_pos, 'button_play')
-        self.rules = Button(mixmi, self.rules_pos, 'button_rules')
-        self.options = Button(mixmi, self.options_pos, 'button_options')
-
-    def adjust(self):
-        """Set the correct positions after resizing the screen."""
-        
-        # Adjust bar position
-        self.position = self.settings.adjust_position(self.position)
-
-        # Adjust logo letters' positions
-        self.m_0.adjust()
-        self.i_0.adjust()
-        self.x_0.adjust()
-        self.m_1.adjust()
-        self.i_1.adjust()
-
-        # Adjust buttons' positions
-        self.play.adjust()
-        self.rules.adjust()
-        self.options.adjust()
+        self.play = Button(mixmi, self.play_pos, "play")
+        self.rules = Button(mixmi, self.rules_pos, "rules")
+        self.options = Button(mixmi, self.options_pos, "options")
 
     def update(self):
-        """Update the top area's elements."""
-        
-        # Update logo letters
+        """Update the start screen area on the screen."""
+
         self.m_0.update()
         self.i_0.update()
         self.x_0.update()
         self.m_1.update()
         self.i_1.update()
-
-        # Update buttons
         self.play.update()
         self.rules.update()
         self.options.update()
 
-class GameArea(Area):
-    """A class to manage the game area of the screen."""
-    
+    def adjust(self):
+        """Adjust the start screen area's position after resizing."""
+
+        self.pos = self.sett.adjust(self.pos)
+        self.m_0.adjust()
+        self.i_0.adjust()
+        self.x_0.adjust()
+        self.m_1.adjust()
+        self.i_1.adjust()
+        self.play.adjust()
+        self.rules.adjust()
+        self.options.adjust()
+
+class Control(Area):
+    """Representation of the control screen area."""
+
     def __init__(self, mixmi):
-        """Initialize the game area and its attributes."""
-        
-        # Call the parent class's __init__() method
-        super().__init__(mixmi)
+        """Initialize the game's control screen area."""
 
         # Set up the basics
-        self.position = self.settings.game_area_position
-        self.image = pygame.image.load(
-            self.settings.get_image('game_area.png')).convert_alpha()
-        self.settings.game_area_size = self.image.get_size()
-        self.rect = pygame.Rect(self.position, self.settings.game_area_size)
+        super().__init__(mixmi, False)
+        self.sett = mixmi.sett
 
-        # Set up the grid
-        self.grid = self._create_grid()
-        self.show_grid = False
+        # Set up the positions
+        self.pos = (0, 36)
+        self.back_pos = (self.pos[0] + 8, self.pos[1] + 6)
+        self.level_pos = (396, self.pos[1] + 2)
+        self.reset_pos = (796, self.pos[1] + 6)
+        self.diffs_pos = [(100, self.pos[1] + 12),
+                          (156, self.pos[1] + 12),
+                          (212, self.pos[1] + 12),
+                          (268, self.pos[1] + 12),
+                          (324, self.pos[1] + 12)]
+        self.lucks = [(494, self.pos[1] + 12),
+                      (550, self.pos[1] + 12),
+                      (606, self.pos[1] + 12),
+                      (662, self.pos[1] + 12),
+                      (718, self.pos[1] + 12)]
 
-        # Set up the buttons' positions
-        self.left_pos = (self.position[0] + 288, self.position[1] + 722)
-        self.right_pos = (self.left_pos[0] + 144, self.position[1] + 722)
-        self.switch_pos = (self.left_pos[0] + 78, self.position[1] + 722)
+        # Set up the buttons and labels
+        self.back = Button(mixmi, self.back_pos, "back")
+        self.reset = Button(mixmi, self.reset_pos, "reset")
+        self.diffs = self._get_labels('diff')
+        self.level = self._get_labels('level')
+        self.lucks = self._get_labels('luck')
 
-        # Set up the buttons
-        self.left = Button(mixmi, self.left_pos, 'button_left')
-        self.right = Button(mixmi, self.right_pos, 'button_right')
-        self.switch = Button(
-            mixmi, self.switch_pos, self.colorize_switch_button())
+    def update(self, game):
+        """Update the control screen area on the screen."""
+
+        self.back.update()
+        if game.visible:
+            self.level.update()
+            self.reset.update()
+            for diff in self.diffs: diff.update()
+            for luck in self.lucks: luck.update()
 
     def adjust(self):
-        """Set the correct positions after resizing the screen."""
-        
-        # Adjust game area position and size
-        self.position = self.settings.adjust_position(self.position)
-        self.settings.game_area_position = self.position
-        self.image = pygame.image.load(
-            self.settings.get_image('game_area.png')).convert_alpha()
-        self.settings.game_area_size = self.image.get_size()
-        self.rect = pygame.Rect(self.position, self.settings.game_area_size)
+        """Adjust the control screen area's position after resizing."""
 
-        # Reset the grid
-        self.grid = self._create_grid()
+        self.pos = self.sett.adjust(self.pos)
+        self.back.adjust()
+        self.level.adjust()
+        self.reset.adjust()
+        for diff in self.diffs: diff.adjust()
+        for luck in self.lucks: luck.adjust()
 
-        # Adjust buttons
-        self.left.adjust()
-        self.right.adjust()
-        self.switch.adjust()
+    def _get_labels(self, l_type):
+        """Return the labels representing the specified type."""
 
-    def update(self):
-        """Update the game area's elements."""
-        
-        self.screen.blit(self.image, self.position)
-        if self.show_grid:
-            self.grid.update()
-        self.left.update()
-        self.right.update()
-        self.switch.load_image(self.colorize_switch_button())
-        self.switch.update()
+        if l_type == 'level':
+            return Label(self.screen, self.sett, self.level_pos, l_type)
+            
+        labels = []
+        label_attr = 'level_diff' if l_type == 'diff' else 'level_luck'
+        pos_attr = 'diffs_pos' if l_type == 'diff' else 'lucks'
+        label_value = getattr(self.sett, label_attr)
+        pos = getattr(self, pos_attr)
 
-    def colorize_switch_button(self):
-        """Return the button name of specified bubble color."""
-
-        if self.settings.bubble_saved == "red":
-            return 'button_switch_red'
-        elif self.settings.bubble_saved == "yellow":
-            return 'button_switch_yellow'
-        elif self.settings.bubble_saved == "green":
-            return 'button_switch_green'
-        elif self.settings.bubble_saved == "blue":
-            return 'button_switch_blue'
-        elif self.settings.bubble_saved == "pink":
-            return 'button_switch_pink'
-        elif self.settings.bubble_saved == "cyan":
-            return 'button_switch_cyan'
-        elif self.settings.bubble_saved == "orange":
-            return 'button_switch_orange'
-        elif self.settings.bubble_saved == "clear":
-            return 'button_switch_clear'
-
-    def is_in_game_area(self, event_pos):
-        """Return True if the event is in the game area."""
-
-        start = self.position
-        end = (self.position[0] + self.image.get_width(),
-               self.position[1] + self.image.get_height())
-
-        if start[0] <= event_pos[0] <= end[0] and (
-            start[1] <= event_pos[1] <= end[1]):
-            return True
-
-    def _create_grid(self):
-        """Return the Group object with grid elements covering game area."""
-
-        # Determine necessary values
-        grid = pygame.sprite.Group()
-        size = self.settings.bubble_size[0]
-        number_per_row = self.image.get_width() // size
-        number_per_column = (self.image.get_height() // size * 6 // 5)
-        x = self.position[0]
-        y = self.position[1]
-
-        # Create the grid
-        for row in range(number_per_column):
-            # Create a row
-            if row % 2 == 0:
-                for element in range(number_per_row):
-                    grid.add(GridElement(
-                        self, (element * size + x, y)))
-            # Every other row is shifted by a half of the bubble size
+        for label in range(5):
+            if label <= label_value - 1:
+                labels.append(Label(self.screen, self.sett, pos[label], f"{l_type}_on"))
             else:
-                for element in range(number_per_row - 1):
-                    grid.add(GridElement(
-                        self, (element * size + x + size // 2, y)))
-            y += size * 5 // 6
-        
-        self.settings.set_game_area_grid_size(len(grid))
-        return grid
+                labels.append(Label(self.screen, self.sett, pos[label], f"{l_type}_off"))
+        return labels
 
-class LevelArea(Area):
-    """A class to manage the levels area of the screen."""
+class Levels(Area):
+    """Representation of the level screen area."""
 
     def __init__(self, mixmi):
-        """Initialize the levels area and its attributes."""
-        
-        # Call the parent class's __init__() method
-        super().__init__(mixmi)
+        """Initialize the game's level screen area."""
 
         # Set up the basics
-        self.position = (self.settings.game_area_position[0] * 2,
-                            self.settings.game_area_position[1])
+        super().__init__(mixmi, False)
+
+        # Set up the positions
+        self.pos = (72, 108)
 
         # Set up the buttons
-        self.level_buttons = self.create_level_buttons(mixmi)
+        self.buttons = self._create_buttons(mixmi)
 
     def update(self):
-        """Update the levels area's elements."""
-        
-        for button in self.level_buttons:
-            button.update()
+        """Update the level screen area on the screen."""
+
+        for button in self.buttons: button.update()
 
     def adjust(self):
-        """Set the correct positions after resizing the screen."""
-        
-        # Adjust levels area position
-        self.position = self.settings.adjust_position(self.position)
+        """Adjust the level screen area's position after resizing."""
 
-        # Adjust buttons
-        for button in self.level_buttons:
-            button.adjust()
+        self.pos = self.sett.adjust(self.pos)
+        for button in self.buttons: button.adjust()
 
-    def create_level_buttons(self, mixmi):
+    def _create_buttons(self, mixmi):
         """Return the list of buttons representing the levels."""
 
         buttons = []
         level_id = 1
         for row in range(10):
             for column in range(10):
-                position = (self.position[0] + column * 72,
-                            self.position[1] + row * 72)
-                buttons.append(ButtonLevel(mixmi, position,
-                         f'button_level_{level_id}', level_id))
+                pos = (self.pos[0] + column * 72, self.pos[1] + row * 72)
+                buttons.append(LevelButton(mixmi, pos, level_id))
                 level_id += 1
         
         return buttons
 
-class GameOverArea(Area):
-    """A class to manage the game over area of the screen."""
+class Game(Area):
+    """Representation of the game screen area."""
 
     def __init__(self, mixmi):
-        """Initialize the game over area and its attributes."""
-        
-        # Call the parent class's __init__() method
-        super().__init__(mixmi)
+        """Initialize the game's game screen area."""
 
         # Set up the basics
-        self.position = (52, 252)
-        self.image = pygame.image.load(
-            self.settings.get_image('game_over_area.png')).convert_alpha()
+        super().__init__(mixmi, False)
+        self.pos = self.sett.game_pos
+        self.image = self.sett.image("game_area")
+        self.rect = pg.Rect(self.pos, self.image.get_size())
+
+        # Set the game size in the settings
+        self.sett.setter("game_size", self.image.get_size())
+
+        # Set up the grid
+        self.grid = self._create_grid()
+        self.grid_visible = False
 
         # Set up the buttons' positions
-        self.try_again_pos = (self.position[0] + 30, self.position[1] + 168)
+        self.left_pos = (self.pos[0] + 288, self.pos[1] + 722)
+        self.switch_pos = (self.left_pos[0] + 78, self.pos[1] + 722)
+        self.right_pos = (self.left_pos[0] + 144, self.pos[1] + 722)
 
         # Set up the buttons
-        self.try_again = Button(mixmi, self.try_again_pos, 'button_try_again')
-        
-    def adjust(self):
-        """Set the correct positions after resizing the screen."""
-        
-        # Adjust game over area position
-        self.position = self.settings.adjust_position(self.position)
-
-        # Adjust buttons
-        self.try_again.adjust()
+        self.left = Button(mixmi, self.left_pos, "left")
+        self.right = Button(mixmi, self.right_pos, "right")
+        self.switch = Button(mixmi, self.switch_pos,
+                            f"switch_{self.sett.saved_color}")
 
     def update(self):
-        """Update the game over area's elements."""
+        """Update the game area, and its elements, on the screen."""
+
+        self.screen.blit(self.image, self.pos)
+        self.left.update()
+        self.switch.update()
+        self.right.update()
+        if self.grid_visible:
+            self.grid.update()
+
+    def adjust(self):
+        """Adjust the game area's position after resizing."""
+
+        # Adjust the game area
+        self.pos = self.sett.adjust(self.pos)
+        self.image = self.sett.image("game_area")
+        self.rect = pg.Rect(self.pos, self.image.get_size())
+
+        # Send info to the settings after adjusting
+        self.sett.setter("game_pos", self.pos)
+        self.sett.setter("game_size", self.image.get_size())
+
+        # Adjust the buttons
+        self.left.adjust()
+        self.switch.adjust()
+        self.right.adjust()
+
+        # Adjust the grid
+        for grid_part in self.grid:
+            grid_part.adjust()
+
+    def active(self, pos):
+        """Return True if the mouse is on the game screen area."""
+    
+        x_0, y_0 = self.pos
+        x_1, y_1 = self.image.get_size()
+
+        return x_0 <= pos[0] <= x_0 + x_1 and y_0 <= pos[1] <= y_0 + y_1
+
+    def colorize_switch(self):
+        """Return switch button's name, acting on color."""
+
+        return f"switch_{self.sett.color}"
+
         
-        self.screen.blit(self.image, self.position)
+
+    def toggle_grid(self):
+        """Toggle the grid's visibility."""
+
+        self.grid_visible = not self.grid_visible
+
+    def _create_grid(self):
+        """Return the Group of grid parts covering the game area."""
+
+        grid = pg.sprite.Group()
+        size = self.sett.bubble_size[0]
+        row_parts = self.image.get_width() // size
+        column_parts = self.image.get_height() // size * 6 // 5
+        x = self.pos[0]
+        y = self.pos[1]
+
+        for row in range(column_parts):
+            if row % 2 == 0:
+                for part in range(row_parts):
+                    grid.add(GridPart(self, (part * size + x, y)))
+            else:
+                for part in range(row_parts - 1):
+                    grid.add(GridPart(self, (part * size + x + size // 2, y)))
+            y += size * 5 // 6
+
+        return grid 
+
+class Lost(Area):
+    """Representation of the game over screen area."""
+
+    def __init__(self, mixmi):
+        """Initialize the game's game over screen area."""
+        
+        super().__init__(mixmi, False)
+
+        # Set up basics
+        self.pos = (52, 252)
+        self.image = self.sett.image("game_over_area")
+
+        # Set up the buttons
+        self.try_again_pos = (self.pos[0] + 30, self.pos[1] + 168)
+        self.try_again = Button(mixmi, self.try_again_pos, "try_again")
+
+    def update(self):
+        """Update the game over screen area on the screen."""
+
+        self.screen.blit(self.image, self.pos)
         self.try_again.update()
 
-    
+    def adjust(self):
+        """Adjust the game over screen area's position after resizing."""
+
+        self.pos = self.sett.adjust(self.pos)
+        self.image = self.sett.image("game_over_area")
+        self.try_again.adjust()
+
+class Won(Area):
+    """Representation of the winning screen area."""
+
+    def __init__(self, mixmi):
+        """Initialize the game's winning screen area."""
+        
+        super().__init__(mixmi, False)
+
+        # Set up basics
+        self.pos = (52, 252)
+        self.image = self.sett.image("game_won_area")
+
+        # Set up the buttons
+        self.next_level_pos = (self.pos[0] + 30, self.pos[1] + 168)
+        self.next_level = Button(mixmi, self.next_level_pos, "next_level")
+
+    def update(self):
+        """Update the winning screen area on the screen."""
+
+        self.screen.blit(self.image, self.pos)
+        self.next_level.update()
+
+    def adjust(self):
+        """Adjust the winning screen area's position after resizing."""
+
+        self.pos = self.sett.adjust(self.pos)
+        self.image = self.sett.image("game_won_area")
+        self.next_level.adjust()

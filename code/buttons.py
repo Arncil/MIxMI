@@ -1,136 +1,150 @@
-import pygame
-
 class Button:
-    """A class to manage buttons."""
+    """Representation of a button."""
 
-    def __init__(self, mixmi, position, image_name):
-        """Initialize the button and its attributes."""
-
-        self.screen = mixmi.screen
-        self.settings = mixmi.settings
-        self.position = position
-        self.image_name = image_name
-        self.is_clicked = False
-        self.image = None
-
-    def is_in_button_area(self, event_pos):
-        """Return True if the event is in the button area."""
-        if not self.image:
-            return False
-
-        start_x, start_y = self.position
-        end_x = start_x + self.image.get_width()
-        end_y = start_y + self.image.get_height()
-
-        return start_x <= event_pos[0] <= end_x and start_y <= event_pos[1] <= end_y
-
-    def update(self):
-        """Update the button's position on the screen."""
-
-        self.load_image()
-        self.screen.blit(self.image, self.position)
-
-    def adjust(self):
-        """Set the correct position after resizing the screen."""
-
-        self.position = self.settings.adjust_position(self.position)
-
-    def load_image(self, specified_name=None):
-        """Load the button's image."""
-
-        if specified_name:
-            self.image_name = specified_name
-
-        if self.is_clicked:
-            self.image = pygame.image.load(self.settings.get_image(
-                        f"{self.image_name}_clicked.png")).convert_alpha()
-        else:
-            self.image = pygame.image.load(self.settings.get_image(
-                        f"{self.image_name}.png")).convert_alpha()
-        
-    def click(self):
-        """Switch the button's is_clicked attribute."""
-
-        self.is_clicked = not self.is_clicked
-
-class ButtonLevel(Button):
-    """A class to manage level buttons."""
-
-    def __init__(self, mixmi, position, image_name, level):
-        """Initialize the level button and its attributes."""
-
-        # Call the parent class constructor
-        super().__init__(mixmi, position, "button_level")
-
-        # Set up the basics
-        self.level = level
-        self.is_locked = True
-
-    def update(self):
-        """Update the level button's position on the screen."""
-
-        if self.is_locked:
-            self.load_image(f"button_level_{self.level}_locked")
-        else:
-            self.load_image(f"button_level_{self.level}")
-
-        self.load_image()
-        self.screen.blit(self.image, self.position)
-
-    def unlock(self):
-        """Unlock the level button."""
-
-        self.is_locked = False
-
-class Label:
-    """A class to manage labels."""
-
-    def __init__(self, mixmi, position, label_type, value=1):
-        """Initialize the label and its attributes."""
+    def __init__(self, mixmi, position, name):
+        """Initialize the game's buttons."""
 
         self.screen = mixmi.screen
-        self.settings = mixmi.settings
-        self.position = position
-        self.label_type = label_type
-        self.value = value
-        self.image = None
+        self.sett = mixmi.sett
+        self.pos = position
+        self.status = False
+        self.name = name
+        self.image = self.load_image()
 
     def update(self):
-        """Update the label's position on the screen."""
+        """Update the button on the screen."""
 
-        self.load_image()
-        self.screen.blit(self.image, self.position)
+        self.screen.blit(self.image, self.pos)
 
     def adjust(self):
-        """Set the correct position after resizing the screen."""
+        """Adjust the button's position after resizing."""
 
-        self.position = self.settings.adjust_position(self.position)
+        self.pos = self.sett.adjust(self.pos)
+        self.image = self.load_image()
+
+    def reload_image(self, name):
+        """Reload the image after changing the button name."""
+
+        self.name = name
+        self.image = self.load_image()
 
     def load_image(self):
-        """Load the label's image."""
+        """Load an image, acting on current click status."""
 
-        if self.label_type == "level":
-            self.image = pygame.image.load(self.settings.get_image(
-                f"label_level_{self.value}.png")).convert_alpha()
-        elif self.label_type == "luck_on":
-            self.image = pygame.image.load(self.settings.get_image(
-                f"label_luck.png")).convert_alpha()
-        elif self.label_type == "luck_off":
-            self.image = pygame.image.load(self.settings.get_image(
-                f"label_luck_off.png")).convert_alpha()
-        elif self.label_type == "diff_on":
-            self.image = pygame.image.load(self.settings.get_image(
-                f"label_diff.png")).convert_alpha()
-        elif self.label_type == "diff_off":
-            self.image = pygame.image.load(self.settings.get_image(
-                f"label_diff_off.png")).convert_alpha()
+        if self.status:
+            return self.sett.image(f"button_{self.name}_clicked")
+        else:
+            return self.sett.image(f"button_{self.name}")
 
-    def set_value(self, value):
-        """Set the level of the label."""
+    def click(self, status):
+        """Change the click status of the button."""
 
-        self.value = value
+        self.status = status
+        self.image = self.load_image()
 
-    def set_label_type(self, label_type):
-        """Set the type of the label."""
+    def active(self, pos):
+        """Return True if the mouse is on the button."""
+    
+        x_0, y_0 = self.pos
+        x_1, y_1 = self.image.get_size()
 
-        self.label_type = label_type
+        return x_0 <= pos[0] <= x_0 + x_1 and y_0 <= pos[1] <= y_0 + y_1
+
+class LevelButton():
+    """Representation of a level button."""
+
+    def __init__(self, mixmi, position, level):
+        """Initialize the game's level buttons."""
+        
+        self.screen = mixmi.screen
+        self.sett = mixmi.sett
+        self.pos = position
+        self.level = level
+        self.status = False
+        self.locked = True
+        self.image = self.load_image()
+
+    def update(self):
+        """Update the level button on the screen."""
+
+        self.screen.blit(self.image, self.pos)
+
+    def adjust(self):
+        """Adjust the level button's position after resizing."""
+
+        self.pos = self.sett.adjust(self.pos)
+        self.image = self.load_image()
+
+    def unlock(self):
+        """Unlock the button."""
+
+        self.locked = False
+        self.image = self.load_image()
+
+    def click(self, status):
+        """Change the click status of the button."""
+
+        self.status = status
+        self.image = self.load_image()
+
+    def active(self, pos):
+        """Return True if the mouse is on the button."""
+    
+        x_0, y_0 = self.pos
+        x_1, y_1 = self.image.get_size()
+
+        return x_0 <= pos[0] <= x_0 + x_1 and y_0 <= pos[1] <= y_0 + y_1
+
+    def load_image(self):
+        """Load an image, acting on current click and locked statuses."""
+            
+        if self.locked:
+            return self.sett.image(f"button_level_{self.level}_locked")
+        elif self.status:
+            return self.sett.image(f"button_level_{self.level}_clicked")
+        else:
+            return self.sett.image(f"button_level_{self.level}")
+
+class Label():
+    """Representation of a label."""
+
+    def __init__(self, screen, sett, position, l_type):
+        """Initialize the labels' attributes."""
+
+        self.screen = screen
+        self.sett = sett
+        self.pos = position
+        self.type = l_type
+        self.image = self.load_image()
+
+    def update(self):
+        """Update the label on the screen."""
+
+        self.screen.blit(self.image, self.pos)
+
+    def adjust(self):
+        """Adjust the label's position after resizing."""
+
+        self.pos = self.sett.adjust(self.pos)
+        self.image = self.load_image()
+
+    def reload_image(self, l_type):
+        """Reload the image after changing the label type."""
+
+        self.type = l_type
+        self.image = self.load_image()
+
+    def load_image(self):
+        """Return an image, acting on label type and value."""
+
+        if self.type == "level":
+            return self.sett.image(f"label_level_{self.sett.level_current}")
+        elif self.type == "luck_on":
+            return self.sett.image("label_luck")
+        elif self.type == "luck_off":
+            return self.sett.image("label_luck_off")
+        elif self.type == "diff_on":
+            return self.sett.image("label_diff")
+        elif self.type == "diff_off":
+            return self.sett.image("label_diff_off")
+            
